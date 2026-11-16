@@ -3,6 +3,7 @@
 #include "Principal.hpp"
 #include <opencv2/core/ocl.hpp>
 #include <chrono>
+#include <algorithm>
 #include <cmath>
 #include <limits>
 #include <string>
@@ -123,12 +124,34 @@ private:
             rgba.copyTo(salida);
             return;
         }
-        cvtColor(imagen, salida, imagen.channels() == 1 ? COLOR_GRAY2RGBA : COLOR_BGR2RGBA);
-        if (vista == 0 && rgba.cols > 1) {
-            int mitad = rgba.cols / 2;
-            rgba.colRange(0, mitad).copyTo(salida.colRange(0, mitad));
-            line(salida, Point(mitad, 0), Point(mitad, rgba.rows - 1), Scalar(255, 255, 255, 255));
+        if (vista != 0 || rgba.cols < 2 || rgba.rows < 2) {
+            cvtColor(imagen, salida, imagen.channels() == 1 ? COLOR_GRAY2RGBA : COLOR_BGR2RGBA);
+            return;
         }
+        Mat efecto;
+        cvtColor(imagen, efecto, COLOR_BGR2RGBA);
+        salida.create(rgba.size(), CV_8UC4);
+        salida.setTo(Scalar(247, 243, 232, 255));
+        if (rgba.rows > rgba.cols) {
+            int mitad = rgba.rows / 2;
+            encajar(rgba, salida, Rect(0, 0, rgba.cols, mitad));
+            encajar(efecto, salida, Rect(0, mitad, rgba.cols, rgba.rows - mitad));
+        } else {
+            int mitad = rgba.cols / 2;
+            encajar(rgba, salida, Rect(0, 0, mitad, rgba.rows));
+            encajar(efecto, salida, Rect(mitad, 0, rgba.cols - mitad, rgba.rows));
+        }
+    }
+
+    static void encajar(const Mat& imagen, Mat& lienzo, const Rect& panel) {
+        double escala = min(double(panel.width) / imagen.cols, double(panel.height) / imagen.rows);
+        Size tamano(max(1, cvRound(imagen.cols * escala)), max(1, cvRound(imagen.rows * escala)));
+        Mat reducida;
+        resize(imagen, reducida, tamano, 0, 0, INTER_AREA);
+        Rect posicion(panel.x + (panel.width - tamano.width) / 2,
+                      panel.y + (panel.height - tamano.height) / 2, tamano.width, tamano.height);
+        // Fit the complete image, as in the class copyTo/ROI compositions.
+        reducida.copyTo(lienzo(posicion));
     }
 
     double procesarCpu(const Mat& rgba, const Parametros& p, int vista) {

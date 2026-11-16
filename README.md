@@ -14,7 +14,7 @@ APK de depuración: `app/build/outputs/apk/debug/app-debug.apk`. Arquitectura AR
 ## Funciones
 
 - Cámara frontal y trasera, con cierre al pasar a segundo plano.
-- Original, efecto completo y comparación por mitades alineadas, sin deformar la imagen.
+- Original, efecto completo y comparación de ambas imágenes completas, sin deformar la imagen.
 - Intermedios: gris, mediana, Gaussiano, Sobel combinado, kernel propio y máscara.
 - Doce deslizadores con los mismos valores/rangos del escritorio. El Gaussiano siempre es impar.
 - CPU `Mat` y `UMat/OpenCL`, con indicación del modo realmente utilizado y respaldo CPU si la GPU no se puede usar.
@@ -44,3 +44,5 @@ python -m unittest discover -s tools -p "test_*.py"
 Las pruebas instrumentadas se compilan en el APK de pruebas; ejecutarlas sobre un teléfono es un paso separado. Antes de dar por validado el dispositivo hay que probar permiso denegado/concedido, frontal/trasera, rotación, segundo plano, nueve vistas, CPU/GPU y guardar/abrir el CSV. La compilación no demuestra por sí sola el rendimiento ni el comportamiento de la cámara del S25.
 
 VTK corresponde exclusivamente a escritorio. El informe y el vídeo-blog en inglés son entregables académicos globales separados del APK.
+
+La revisión final y sus comprobaciones constan en `odd/tasks/revision-parte-i.md`. El informe con datos reales de escritorio y el guion en inglés se guardan en `docs/INFORME_PARTE_I.html` y `docs/GUION_VIDEO_EN.md` del repositorio de escritorio. El usuario confirmó funcionamiento en su S25 Ultra; esta revisión no volvió a medir ni a transferir archivos del teléfono. El APK es ARM64 y no se validó con los emuladores x86_64 instalados.

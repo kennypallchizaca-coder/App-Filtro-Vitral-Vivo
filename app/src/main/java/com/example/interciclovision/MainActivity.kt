@@ -324,8 +324,11 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
             if (ahora - ultimaUi >= 500 || termino) {
                 ultimaUi = ahora
                 val r = recursos
+                val comparacionVertical = rgba.rows() > rgba.cols()
                 runOnUiThread {
                     if (!isDestroyed && reanudada) {
+                        if (vistaActual == 0 && vista == 0) binding.viewCaption.setText(
+                            if (comparacionVertical) R.string.comparison_vertical else R.string.comparison_horizontal)
                         binding.metrics.text = getString(R.string.live_metrics, numero(t[0]), numero(t[1]),
                             numero(r.fps), numero(r.ramPssMiB), numero(r.cpuPorcentaje), numero(r.ramLibreMiB))
                         binding.status.text = getString(R.string.live_backend,
@@ -373,9 +376,10 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
             if (registro.activa) binding.measurementStatus.text =
                 getString(R.string.measurement_progress, registro.pares)
             else if (registro.pares > 0) binding.measurementStatus.text =
-                if (registro.promedioGpuMs.isFinite()) getString(R.string.measurement_summary,
-                    registro.pares, numero(registro.promedioCpuMs), numero(registro.promedioGpuMs))
-                else getString(R.string.measurement_cpu_only, registro.pares, numero(registro.promedioCpuMs))
+                if (registro.promedioGpuMs.isFinite()) resources.getQuantityString(R.plurals.measurement_summary,
+                    registro.pares, registro.pares, numero(registro.promedioCpuMs), numero(registro.promedioGpuMs))
+                else resources.getQuantityString(R.plurals.measurement_cpu_only,
+                    registro.pares, registro.pares, numero(registro.promedioCpuMs))
             registro.activa
         }
         binding.measureButton.isEnabled = camaraActiva

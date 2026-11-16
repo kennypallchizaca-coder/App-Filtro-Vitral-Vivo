@@ -1,3 +1,6 @@
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
 #include "ProcesadorAndroid.hpp"
 #include <cassert>
 #include <cmath>
@@ -22,11 +25,30 @@ int main() {
         assert(t.cpuMs > 0 && !t.gpuUsada && isnan(t.gpuMs));
         if (vista == 2)
             assert(norm(salida, original, NORM_INF) == 0);
-        if (vista == 0)
-            assert(norm(salida.colRange(0, rgba.cols / 2 - 1),
-                        original.colRange(0, rgba.cols / 2 - 1), NORM_INF) == 0);
+        if (vista == 0) {
+            Mat originalCompleto, bgr, final, finalCompleto;
+            resize(original, originalCompleto, Size(31, 23), 0, 0, INTER_AREA);
+            assert(norm(salida(Rect(0, 12, 31, 23)), originalCompleto, NORM_INF) == 0);
+            Efecto<Mat> referenciaComparacion;
+            cvtColor(rgba, bgr, COLOR_RGBA2BGR);
+            cvtColor(referenciaComparacion.procesar(bgr, p), final, COLOR_BGR2RGBA);
+            resize(final, finalCompleto, Size(32, 24), 0, 0, INTER_AREA);
+            assert(norm(salida(Rect(31, 11, 32, 24)), finalCompleto, NORM_INF) == 0);
+        }
     }
     assert(norm(rgba, original, NORM_INF) == 0);
+
+    Mat vertical(63, 47, CV_8UC4), comparacionVertical, miniatura;
+    randu(vertical, Scalar(0, 0, 0, 255), Scalar(256, 256, 256, 256));
+    procesador.procesar(vertical, comparacionVertical, valores, false, 0, false);
+    resize(vertical, miniatura, Size(23, 31), 0, 0, INTER_AREA);
+    assert(norm(comparacionVertical(Rect(12, 0, 23, 31)), miniatura, NORM_INF) == 0);
+    Mat verticalBgr, verticalFinal;
+    Efecto<Mat> referenciaVertical;
+    cvtColor(vertical, verticalBgr, COLOR_RGBA2BGR);
+    cvtColor(referenciaVertical.procesar(verticalBgr, p), verticalFinal, COLOR_BGR2RGBA);
+    resize(verticalFinal, miniatura, Size(24, 32), 0, 0, INTER_AREA);
+    assert(norm(comparacionVertical(Rect(11, 31, 24, 32)), miniatura, NORM_INF) == 0);
 
     cvtColor(rgba, original, COLOR_RGBA2BGR);
     Efecto<Mat> referencia;

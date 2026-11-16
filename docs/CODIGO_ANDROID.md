@@ -8,7 +8,7 @@
 4. `native-lib.cpp` comprueba los argumentos, serializa procesamiento/reinicio con un mutex y traduce excepciones C++ a excepciones Java.
 5. `ProcesadorAndroid.hpp` transforma RGBA a BGR y llama al mismo `Efecto<Mat>` o `Efecto<UMat>` del escritorio. La copia local `Principal.hpp` conserva el algoritmo y sus nombres.
 6. Se selecciona la imagen final o un intermedio y se vuelve a RGBA. La salida mantiene las dimensiones de entrada para el Bitmap de la cámara.
-7. La vista de comparación conserva la mitad izquierda original y muestra el efecto en la derecha. Las dos mitades pertenecen al mismo fotograma y mantienen sus coordenadas.
+7. La comparación encaja las dos imágenes completas, sin deformarlas: original arriba y resultado abajo en retrato, o lado a lado en horizontal. Ambas pertenecen al mismo fotograma. La salida conserva el tamaño que exige el Bitmap de OpenCV.
 8. La actividad devuelve la matriz de salida y publica textos de estado cada medio segundo, no una tarea de interfaz por cada píxel.
 
 ## Filtros reutilizados
