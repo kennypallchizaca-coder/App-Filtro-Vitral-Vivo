@@ -33,7 +33,8 @@ import java.util.Locale
 class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListener2 {
     private lateinit var binding: ActivityMainBinding
     @Volatile private var valores = ParametrosMoviles.iniciales()
-    @Volatile private var usarGpu = false
+    private class SeleccionModo(val gpu: Boolean)
+    @Volatile private var modoActual = SeleccionModo(false)
     @Volatile private var vista = 0
     @Volatile private var reanudada = false
     @Volatile private var falloFrame = false
@@ -41,10 +42,11 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
     private var indiceCamara = CameraBridgeViewBase.CAMERA_ID_FRONT
     private var salida: Mat? = null
     private val sliders = mutableListOf<SeekBar>()
-    private var recursos = RecursosMedidos()
-    private var marcaRecursos = 0L
-    private var marcaCpu = 0L
-    private var fotogramas = 0
+    private val ventanaMedicion = VentanaMedicion()
+    private val muestras = arrayOfNulls<RecursosMedidos>(2)
+    private var modoMedido: SeleccionModo? = null
+    private var parametrosMedidos: IntArray? = null
+    private var vistaMedida = -1
     private var ultimaUi = 0L
     private val handler = Handler(Looper.getMainLooper())
 
@@ -76,7 +78,7 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         savedInstanceState?.getIntArray("valores")?.let {
             if (runCatching { ParametrosMoviles.validar(it) }.isSuccess) valores = it.copyOf()
         }
-        usarGpu = savedInstanceState?.getBoolean("gpu") ?: false
+        modoActual = SeleccionModo(savedInstanceState?.getBoolean("gpu") ?: false)
         vista = (savedInstanceState?.getInt("vista") ?: 0)
             .coerceIn(0, resources.getStringArray(R.array.views).lastIndex)
         indiceCamara = savedInstanceState?.getInt("camara") ?: if (
@@ -103,8 +105,11 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
     }
 
     private fun prepararControles() {
-        binding.backend.check(if (usarGpu) R.id.gpu_button else R.id.cpu_button)
-        binding.backend.setOnCheckedChangeListener { _, checked -> usarGpu = checked == R.id.gpu_button }
+        binding.backend.check(if (modoActual.gpu) R.id.gpu_button else R.id.cpu_button)
+        binding.backend.setOnCheckedChangeListener { _, checked ->
+            modoActual = SeleccionModo(checked == R.id.gpu_button)
+            binding.metrics.setText(R.string.waiting_frames)
+        }
         binding.viewSelector.setSelection(vista)
         binding.viewSelector.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onNothingSelected(parent: AdapterView<*>?) = Unit
@@ -179,6 +184,8 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
     // Asistencia de IA: OpenAI Codex corrigió el estado de espera al volver a abrir la cámara.
     private fun activarCamara() {
         if (!::binding.isInitialized || !reanudada || !tienePermiso()) return
+        modoActual = SeleccionModo(modoActual.gpu)
+        binding.metrics.setText(R.string.waiting_frames)
         falloFrame = false
         ultimoFrame = SystemClock.elapsedRealtime()
         binding.emptyPreview.setText(R.string.camera_wait)
@@ -213,10 +220,11 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
     override fun onCameraViewStarted(width: Int, height: Int) {
         salida = Mat()
         reiniciarProcesador()
-        marcaRecursos = 0L
+        ventanaMedicion.reiniciar()
+        muestras.fill(null)
+        modoMedido = modoActual
+        parametrosMedidos = null
         ultimaUi = 0L
-        fotogramas = 0
-        recursos = RecursosMedidos()
         runOnUiThread {
             binding.emptyPreview.visibility = View.GONE
             actualizarControles()
@@ -238,28 +246,57 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         try {
             val parametros = valores
             val vistaActual = vista
-            // Ambas rutas miden el mismo fotograma; el modo elegido decide qué imagen mostrar.
+            val modo = modoActual
+            val cambioModo = modo !== modoMedido
+            val cambioVista = parametros !== parametrosMedidos || vistaActual != vistaMedida
+            if (cambioModo) {
+                // Soltar los buffers de la ruta anterior antes de medir la memoria.
+                reiniciarProcesador()
+                modoMedido = modo
+            }
+            if (cambioVista) {
+                muestras.fill(null)
+                parametrosMedidos = parametros
+                vistaMedida = vistaActual
+            }
+            if (cambioModo || cambioVista) {
+                ventanaMedicion.reiniciar()
+                ultimaUi = 0L
+            }
             val tiempos = procesarFrame(rgba.nativeObjAddr, destino.nativeObjAddr,
-                parametros, usarGpu, vistaActual, true)
-            actualizarRecursos()
+                parametros, modo.gpu, vistaActual, false)
+            if (modo !== modoActual || parametros !== valores || vistaActual != vista) return destino
+            val gpuUsada = tiempos[5] == 1.0
             val ahora = SystemClock.elapsedRealtime()
+            if (gpuUsada == modo.gpu) {
+                val indice = if (gpuUsada) 1 else 0
+                actualizarRecursos(ahora, tiempos[indice])?.let { muestras[indice] = it }
+            } else {
+                // El fotograma de respaldo no representa una muestra OpenCL.
+                ventanaMedicion.reiniciar()
+                muestras[1] = null
+            }
             if (ahora - ultimaUi >= 500) {
                 ultimaUi = ahora
                 // Asistencia de IA: OpenAI Codex limitó esta consulta JNI al ritmo de la interfaz.
                 val dispositivo = informacionGpu()
-                val r = recursos
+                val cpu = muestras[0]
+                val gpu = muestras[1]
                 val comparacionVertical = rgba.rows() > rgba.cols()
                 runOnUiThread {
-                    if (!isDestroyed && reanudada) {
-                        val tiempoCpuMs = tiempos[0]
-                        val tiempoGpuMs = tiempos[1]
-                        val gpuUsada = tiempos[5] == 1.0
-                        if (vistaActual == 0 && vista == 0) binding.viewCaption.setText(
+                    if (!isDestroyed && reanudada && modo === modoActual &&
+                        parametros === valores && vistaActual == vista) {
+                        if (vistaActual == 0) binding.viewCaption.setText(
                             if (comparacionVertical) R.string.comparison_vertical else R.string.comparison_horizontal)
-                        binding.metrics.text = getString(R.string.live_metrics, numero(tiempoCpuMs), numero(tiempoGpuMs),
-                            numero(r.fps), numero(r.ramPssMiB), numero(r.cpuPorcentaje), numero(r.ramLibreMiB))
+                        binding.metrics.text = getString(R.string.live_metrics,
+                            describirMedicion(R.string.cpu_mode, cpu), describirMedicion(R.string.gpu_mode, gpu))
+                        val actual = when {
+                            gpuUsada -> R.string.gpu_mode
+                            modo.gpu -> R.string.cpu_fallback
+                            else -> R.string.cpu_mode
+                        }
                         binding.status.text = getString(R.string.live_backend,
-                            if (gpuUsada) "UMat / OpenCL" else "CPU / Mat", dispositivo.take(220))
+                            getString(actual), dispositivo.take(220))
                         actualizarControles()
                     }
                 }
@@ -277,22 +314,19 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         }
     }
 
-    private fun actualizarRecursos() {
-        val ahora = SystemClock.elapsedRealtime()
-        fotogramas++
-        if (marcaRecursos != 0L && ahora - marcaRecursos < 1000) return
-        val cpu = Process.getElapsedCpuTime()
+    private fun actualizarRecursos(ahora: Long, procesoMs: Double): RecursosMedidos? {
+        val muestra = ventanaMedicion.agregar(ahora, procesoMs,
+            Runtime.getRuntime().availableProcessors(), Process::getElapsedCpuTime) ?: return null
         val memoria = ActivityManager.MemoryInfo()
         (getSystemService(ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(memoria)
-        val intervalo = ahora - marcaRecursos
-        recursos = RecursosMedidos(
-            if (marcaRecursos == 0L) Double.NaN else fotogramas * 1000.0 / intervalo,
-            if (marcaRecursos == 0L) Double.NaN else usoCpuPorcentaje(cpu - marcaCpu, intervalo,
-                Runtime.getRuntime().availableProcessors()),
-            Debug.getPss() / 1024.0, memoria.availMem / (1024.0 * 1024.0))
-        fotogramas = 0
-        marcaRecursos = ahora
-        marcaCpu = cpu
+        return muestra.copy(ramPssMiB = Debug.getPss() / 1024.0,
+            ramLibreMiB = memoria.availMem / (1024.0 * 1024.0))
+    }
+
+    private fun describirMedicion(modo: Int, muestra: RecursosMedidos?): String {
+        val r = muestra ?: RecursosMedidos()
+        return getString(R.string.mode_metrics, getString(modo), numero(r.procesoMs), numero(r.fps),
+            numero(r.ramPssMiB), numero(r.cpuPorcentaje), numero(r.ramLibreMiB))
     }
 
     private fun numero(valor: Double) = if (valor.isFinite()) String.format(Locale.US, "%.2f", valor) else "—"
@@ -309,7 +343,7 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
 
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putIntArray("valores", valores)
-        outState.putBoolean("gpu", usarGpu)
+        outState.putBoolean("gpu", modoActual.gpu)
         outState.putInt("vista", vista)
         outState.putInt("camara", indiceCamara)
         super.onSaveInstanceState(outState)

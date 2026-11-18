@@ -14,10 +14,10 @@ def luminance(color):
 
 
 class AndroidAppTest(unittest.TestCase):
-    def test_ascii_has_seven_controls(self):
+    def test_vitral_has_seven_controls(self):
         controls = (ROOT / "app/src/main/java/com/example/interciclovision/ParametrosMoviles.kt").read_text(encoding="utf-8")
         self.assertEqual(controls.count('        ControlFiltro('), 7)
-        self.assertIn('ControlFiltro("Tamaño de celda", 6, 24, 1, 9)', controls)
+        self.assertIn('ControlFiltro("Escala del vitral", 6, 24, 1, 9)', controls)
 
     def test_academic_build_excludes_arcore_prototype(self):
         settings = (ROOT / "settings.gradle.kts").read_text(encoding="utf-8")
@@ -32,8 +32,8 @@ class AndroidAppTest(unittest.TestCase):
         self.assertNotIn("export_button", layout)
         self.assertNotIn("measure_button", layout)
         self.assertIn("R.string.live_metrics", activity)
-        self.assertIn("actualizarRecursos()", activity)
-        self.assertIn("parametros, usarGpu, vistaActual, true)", activity)
+        self.assertIn("actualizarRecursos(ahora, tiempos[indice])", activity)
+        self.assertIn("parametros, modo.gpu, vistaActual, false)", activity)
 
     def test_portal_does_not_require_transformation_slider(self):
         layout = ET.parse(ROOT / "app/src/main/res/layout/activity_main.xml")
@@ -60,9 +60,9 @@ class AndroidAppTest(unittest.TestCase):
         strings = ET.parse(ROOT / "app/src/main/res/values/strings.xml")
         views = strings.find("./string-array[@name='views']")
         self.assertEqual(len(views), 10)
-        self.assertEqual(views[1].text, "ASCII")
+        self.assertEqual(views[1].text, "Vitral Vivo")
         self.assertEqual(views[7].text, "Respuesta del kernel propio")
-        self.assertEqual(views[9].text, "Portal ASCII")
+        self.assertEqual(views[9].text, "Portal Vitral")
         layout = ET.parse(ROOT / "app/src/main/res/layout/activity_main.xml")
         buttons = [node for node in layout.iter() if node.tag.endswith("Button")]
         ids = {button.get(A + "id") for button in buttons}

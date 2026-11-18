@@ -25,6 +25,22 @@ class MobileRulesTest {
         assertThrows(IllegalArgumentException::class.java) { ParametrosMoviles.validar(IntArray(12)) }
     }
 
+    @Test fun switchingModeDiscardsThePartialWindowAndWarmupFrame() {
+        val ventana = VentanaMedicion()
+        var cpu = 100L
+        assertNull(ventana.agregar(10, 100.0, 4) { cpu })
+        assertNull(ventana.agregar(510, 20.0, 4) { cpu })
+        ventana.reiniciar()
+        cpu = 1000L
+        assertNull(ventana.agregar(600, 200.0, 4) { cpu })
+        assertNull(ventana.agregar(1100, 4.0, 4) { cpu })
+        cpu = 1200L
+        val muestra = checkNotNull(ventana.agregar(1600, 6.0, 4) { cpu })
+        assertEquals(5.0, muestra.procesoMs, 0.0001)
+        assertEquals(2.0, muestra.fps, 0.0001)
+        assertEquals(5.0, muestra.cpuPorcentaje, 0.0001)
+    }
+
     @Test fun cpuPercentageUsesLogicalCpuCapacity() {
         assertEquals(5.0, usoCpuPorcentaje(400, 1000, 8), 0.0001)
         assertEquals(0.0, usoCpuPorcentaje(10, 0, 8), 0.0)

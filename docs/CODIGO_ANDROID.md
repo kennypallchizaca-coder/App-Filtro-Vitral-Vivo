@@ -12,11 +12,11 @@
 8. La comparación encaja original y efecto completos: arriba/abajo o izquierda/derecha según las dimensiones de cámara. No estira ni recorta las imágenes.
 9. Los textos de tiempos, FPS y recursos se actualizan cada medio segundo, sin guardar archivos.
 
-## Efecto ASCII y código de clase
+## Vitral Vivo y código de clase
 
-`Principal.hpp` comparte el preprocesamiento y el dibujo con escritorio. La luminosidad selecciona caracteres de distinta densidad y la respuesta del kernel propio participa en la máscara que sube un nivel de densidad en las celdas con borde. No se añaden rayas direccionales. Se conservan gris, mediana, Gaussiano, Sobel combinado, respuesta del kernel y máscara como vistas intermedias.
+`Principal.hpp` comparte preprocesamiento y dibujo con escritorio. El color sale del fotograma original; la máscara de Sobel y del kernel propio realza subdivisiones fijas. Las etapas intermedias siguen disponibles.
 
-`Efecto<Mat>` y `Efecto<UMat>` construyen la misma cuadrícula reducida. `cuadricula()` copia o descarga solo brillo y máscara de bordes; `dibujarAscii` usa `putText` en CPU sobre una imagen BGR del tamaño original. No se requiere fuente ni dependencia adicional de Android. La comparación y el portal conservan `Rect` y `copyTo` de los ejemplos de clase.
+`Efecto<Mat>` y `Efecto<UMat>` construyen los mismos mapas reducidos. `dibujarVitral` rellena triángulos y dibuja uniones en CPU. La comparación y el portal siguen usando `Rect` y `copyTo`.
 
 ## Kernel propio
 
@@ -26,7 +26,7 @@ K = 1/(4+2a)  *  [ -1    4+2a     -1 ]
                  [  0     -1      -a ]
 ```
 
-La suma es cero: una región uniforme da respuesta cero. `a` regula dos vecinos diagonales. La respuesta conserva signo en CV_32F antes de obtener su magnitud. `pesoPropio` la mezcla con Sobel. La simetría de 180 grados hace coincidir aquí correlación y convolución. El resultado artístico se obtiene de una cuadrícula verde de caracteres con distinta densidad, sin un efecto cómic.
+La suma es cero: una región uniforme da respuesta cero. `a` regula dos vecinos diagonales. La respuesta conserva signo en CV_32F antes de tomar su magnitud y multiplicar por 12 para combinar con Sobel. La simetría hace coincidir correlación y convolución.
 
 ## Controles
 
@@ -39,15 +39,15 @@ Los valores iniciales son `[40, 5, 173, 30, 100, 9, 150]`. Cada cambio publica u
 `Mediciones.kt` contiene únicamente los valores de recursos y el cálculo del porcentaje CPU. No hay lista de muestras, formato CSV, exportador, selector de destino ni hilo de escritura.
 
 - CPU: Mat con OpenCL desactivado.
-- GPU: preprocesamiento UMat con OpenCL habilitado y dispositivo GPU comprobado; dibujo de caracteres en CPU. `ocl::finish` espera el trabajo para medir tiempos reales.
-- El tiempo total de cada ruta incluye conversiones, dibujo ASCII en CPU y preparación de su vista; GPU también carga/descarga. Los subtiempos de filtro y descarga terminan antes del dibujo y no lo atribuyen a la GPU. No incluye la copia final a JNI ni captura/dibujo de cámara.
+- GPU: preprocesamiento UMat con un dispositivo OpenCL comprobado; dibujo del vitral en CPU. `ocl::finish` espera el trabajo antes de cronometrar.
+- El tiempo total incluye conversiones, dibujo y preparación de la vista; en OpenCL también las transferencias. No incluye captura, visualización de cámara ni la última copia JNI.
 - FPS: fotogramas entregados por tiempo monotónico, no `1000/ms`.
 - RAM del proceso: PSS convertido de KiB a MiB. No equivale a VRAM.
 - RAM libre: ActivityManager, bytes convertidos a MiB.
 - CPU: tiempo CPU dividido por tiempo de pared y procesadores lógicos, normalizado a 0..100%.
 - Recursos: muestreo aproximadamente cada segundo. Antes de una muestra válida se muestra una raya.
 
-Ambas rutas se ejecutan secuencialmente para compararlas; sus recursos no son dos procesos independientes. T-API puede usar CPU en operaciones no compatibles y no se promete aceleración universal.
+La app ejecuta una ruta por vez. Al cambiar de modo reinicia procesador y ventana; una muestra completa queda disponible por modo. El respaldo CPU nunca se anota como OpenCL. PSS es memoria del proceso, no VRAM.
 
 ## Permisos y ciclo de vida
 
@@ -59,10 +59,10 @@ La rotación conserva parámetros, modo, vista y cámara. La tarea de interfaz r
 
 Las pruebas nativas comprueban diez vistas, imágenes en retrato/paisaje, RGBA del mismo tamaño, igualdad CPU con el efecto y entradas inválidas. También comprueban comparación de tiempos con salida CPU y con salida GPU o respaldo real.
 
-Las pruebas JVM conservan valores/rangos y porcentaje CPU. Python comprueba permisos, controles, contraste, empaquetado y ausencia de exportación. La prueba instrumentada JNI requiere ejecutar su APK en un dispositivo autorizado; compilar no sustituye probar la cámara del S25.
+Las pruebas JVM comprueban parámetros, porcentaje CPU y descarte de ventanas parciales. Python comprueba controles, permisos y empaquetado. La prueba instrumentada requiere un S25 autorizado; compilarla no la ejecuta.
 
-## Portal ASCII
+## Portal Vitral
 
-`prepararVista` convierte el resultado a RGBA. Solo en **Portal ASCII**, `aplicarPortal` usa una máscara con `copyTo` para recuperar el original fuera del rectángulo central; después `rectangle` dibuja el marco. CPU y GPU siguen procesando el fotograma entero.
+`prepararVista` convierte a RGBA. **Portal Vitral** devuelve el original fuera de un rectángulo mediante una máscara y marca el marco con `rectangle`.
 
-La vista original conserva el procesamiento cronometrado, pero no descarga mapas ni dibuja caracteres que no se van a mostrar. Las vistas de comparación, ASCII y portal dibujan la cuadrícula; las intermedias muestran directamente la etapa elegida. No se usa segmentación de personas, VTK ni ARCore en Android.
+La vista original conserva el procesamiento cronometrado, pero no descarga ni dibuja el vitral. Comparación, Vitral Vivo y Portal Vitral sí dibujan la malla. Las intermedias muestran la etapa elegida.

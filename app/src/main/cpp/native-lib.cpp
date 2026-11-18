@@ -31,7 +31,7 @@ Java_com_example_interciclovision_MainActivity_stringFromJNI(
     return env->NewStringUTF(hello.c_str());
 }
 
-// Asistencia de IA: OpenAI Codex ajustó el puente JNI a los siete controles ASCII.
+// Asistencia de IA: OpenAI Codex ajustó el puente JNI a los siete controles de Vitral Vivo.
 extern "C" JNIEXPORT jdoubleArray JNICALL
 Java_com_example_interciclovision_MainActivity_procesarFrame(
         JNIEnv* env, jobject, jlong entrada, jlong salida, jintArray controles,

@@ -1,6 +1,6 @@
 # IntercicloVision — Android
 
-Aplicación de la **Parte I** de Visión Artificial para Android: cámara, procesamiento C++/OpenCV mediante JNI y efecto ASCII de luminosidad y contornos. La Parte II no está incluida.
+Aplicación de la **Parte I** de Visión Artificial para Android: cámara, C++/OpenCV por JNI y **Vitral Vivo**, un vitral de triángulos irregulares con malla fija. No incluye Parte II.
 
 ## Ejecutar
 
@@ -19,13 +19,13 @@ APK de depuración: `app/build/outputs/apk/debug/app-debug.apk`. Arquitectura AR
 - Siete deslizadores con los mismos valores/rangos del escritorio. El Gaussiano siempre es impar.
 - CPU `Mat` y `UMat/OpenCL`, con indicación del modo realmente utilizado y respaldo CPU si la GPU no se puede usar.
 - Tiempo, FPS procesados, CPU del proceso, RAM PSS y memoria disponible del sistema.
-- Comparación de tiempos CPU/GPU en vivo sobre el mismo fotograma, sin registro ni exportación de archivos.
+- Ventanas de medición CPU/OpenCL por separado, sin exportar archivos.
 
 ## Mediciones
 
-Los tiempos CPU y GPU se calculan sobre el mismo fotograma con los parámetros actuales. CPU/Mat y GPU/UMat eligen qué resultado mostrar; ambas rutas se cronometran para mantener la comparación visible. Esto añade carga respecto a ejecutar una sola ruta. No hay botón de grabar mediciones ni exportación CSV.
+Selecciona **CPU / Mat**, espera su primera muestra completa y luego cambia a **GPU / OpenCL** sin cambiar cámara, vista ni controles. La app ejecuta una ruta por vez, reinicia los búferes y conserva la última muestra completa de cada modo. Los datos no corresponden al mismo fotograma. El respaldo CPU no se anota como OpenCL. No se guardan mediciones en archivos.
 
-El preprocesamiento usa `Mat` o `UMat`; el dibujo de caracteres con OpenCV siempre usa CPU y está incluido en el tiempo total de cada ruta. Para ASCII, solo se descarga la cuadrícula reducida; las vistas intermedias descargan su imagen completa. La GPU se sincroniza con `ocl::finish`; el tiempo incluye la subida/descarga y las conversiones de imagen de esa ruta. El paso final de copia al Mat de salida de JNI, la captura y el dibujo de la vista no están incluidos en ese cronómetro. Los FPS se calculan aparte con fotogramas entregados por unidad de tiempo. RAM y CPU se muestrean aproximadamente cada segundo; los campos sin muestra quedan vacíos, no se inventan ceros.
+Mat y UMat usan el mismo filtrado; OpenCL descarga color y bordes reducidos y sincroniza con `ocl::finish`. El dibujo de piezas es CPU e integra el tiempo total. FPS cuenta fotogramas reales; RAM PSS y CPU se muestrean alrededor de una vez por segundo. «—» significa que no hay muestra válida.
 
 `UMat/OpenCL` no significa que todas las operaciones se ejecuten en GPU: T-API puede utilizar CPU para una operación no compatible. No se muestra un porcentaje GPU ni VRAM porque no se dispone de un contador Android portátil para ello. Un resultado GPU más lento sigue siendo un resultado válido; no se promete aceleración.
 
@@ -44,8 +44,8 @@ Las pruebas instrumentadas se compilan en el APK de pruebas; ejecutarlas sobre u
 
 VTK corresponde exclusivamente a escritorio. El informe y el vídeo-blog en inglés son entregables académicos globales separados del APK.
 
-El repositorio de escritorio guarda el material para la plantilla y el guion en inglés en docs/ENTREGA_PARTE_I.md y docs/GUION_VIDEO_EN.md. La confirmación anterior del S25 Ultra correspondía al efecto reemplazado; ASCII requiere una nueva prueba en el teléfono. El APK es ARM64 y no se validó con los emuladores x86_64 instalados.
+El repositorio de escritorio contiene `docs/ENTREGA_PARTE_I.md` y `docs/GUION_VIDEO_EN.md`. Falta probar Vitral Vivo y OpenCL en el S25 Ultra. El APK ARM64 no se corrió en los emuladores x86_64.
 
-## Portal ASCII
+## Portal Vitral
 
-Selecciona **Portal ASCII** para ver la cámara real fuera del marco y el efecto ASCII dentro. El marco se dibuja con OpenCV; la app no requiere VTK ni una barra de transformación. **ASCII** conserva el efecto en toda la imagen y los siete controles del filtro siguen disponibles.
+**Portal Vitral** muestra la cámara real fuera del marco y el efecto dentro. **Vitral Vivo** aplica el efecto a toda la imagen. Ambos disponen de los mismos controles.

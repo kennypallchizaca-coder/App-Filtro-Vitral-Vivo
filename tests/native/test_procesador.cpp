@@ -32,7 +32,7 @@ int main() {
             Efecto<Mat> referenciaComparacion;
             cvtColor(rgba, bgr, COLOR_RGBA2BGR);
             referenciaComparacion.procesar(bgr, p);
-            cvtColor(dibujarAscii(referenciaComparacion.cuadricula(), rgba.size()), final, COLOR_BGR2RGBA);
+            cvtColor(dibujarVitral(referenciaComparacion.cuadricula(), rgba.size()), final, COLOR_BGR2RGBA);
             resize(final, finalCompleto, Size(32, 24), 0, 0, INTER_AREA);
             assert(norm(salida(Rect(31, 11, 32, 24)), finalCompleto, NORM_INF) == 0);
         }
@@ -48,7 +48,7 @@ int main() {
     Efecto<Mat> referenciaVertical;
     cvtColor(vertical, verticalBgr, COLOR_RGBA2BGR);
     referenciaVertical.procesar(verticalBgr, p);
-    cvtColor(dibujarAscii(referenciaVertical.cuadricula(), vertical.size()), verticalFinal, COLOR_BGR2RGBA);
+    cvtColor(dibujarVitral(referenciaVertical.cuadricula(), vertical.size()), verticalFinal, COLOR_BGR2RGBA);
     resize(verticalFinal, miniatura, Size(24, 32), 0, 0, INTER_AREA);
     assert(norm(comparacionVertical(Rect(11, 31, 24, 32)), miniatura, NORM_INF) == 0);
 
@@ -56,7 +56,7 @@ int main() {
     Efecto<Mat> referencia;
     Mat esperado;
     referencia.procesar(original, p);
-    cvtColor(dibujarAscii(referencia.cuadricula(), rgba.size()), esperado, COLOR_BGR2RGBA);
+    cvtColor(dibujarVitral(referencia.cuadricula(), rgba.size()), esperado, COLOR_BGR2RGBA);
     procesador.procesar(rgba, salida, valores, false, 1, false);
     assert(norm(salida, esperado, NORM_INF) == 0);
 
@@ -107,6 +107,17 @@ int main() {
         assert(norm(salida, esperado, NORM_INF) == 0);
         cout << "GPU unavailable: truthful CPU fallback checked\n";
     }
+    ProcesadorAndroid soloOpenCL;
+    auto aislado = soloOpenCL.procesar(rgba, salida, valores, true, 1, false);
+    assert(aislado.gpuUsada == t.gpuUsada && salida.size() == rgba.size());
+    if (aislado.gpuUsada) {
+        assert(isnan(aislado.cpuMs) && aislado.gpuMs > 0);
+        cout << "OpenCL-only: no Mat measurement\n";
+    } else {
+        assert(aislado.cpuMs > 0 && isnan(aislado.gpuMs));
+        assert(norm(salida, esperado, NORM_INF) == 0);
+    }
+
     for (const Mat& entrada : {rgba, vertical}) {
         Mat completa, portal, base = entrada.clone();
         procesador.procesar(entrada, completa, valores, false, 1, false);
@@ -126,5 +137,5 @@ int main() {
     try { procesador.procesar(rgba, salida, valores, false, 10, false); }
     catch (const invalid_argument&) { rechazo = true; }
     assert(rechazo && norm(salida, antes, NORM_INF) == 0);
-    cout << "Portal movil: interior ASCII y exterior real en ambas orientaciones\n";
+    cout << "Portal movil: interior de vitral y exterior real en ambas orientaciones\n";
 }

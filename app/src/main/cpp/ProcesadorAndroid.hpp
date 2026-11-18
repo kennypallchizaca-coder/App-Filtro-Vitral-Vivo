@@ -32,7 +32,7 @@ inline Rect regionPortal(Size tamano) {
     return Rect((tamano.width - ancho) / 2, (tamano.height - alto) / 2, ancho, alto);
 }
 
-// Recupera la cámara fuera del marco y conserva el ASCII dentro.
+// Recupera la cámara fuera del marco y conserva el vitral dentro.
 inline void aplicarPortal(const Mat& original, Mat& resultado) {
     if (original.empty() || original.size() != resultado.size() || original.type() != resultado.type())
         throw invalid_argument("El portal requiere dos imagenes del mismo tamano y tipo");
@@ -48,7 +48,7 @@ struct TiemposAndroid {
     bool gpuUsada = false;
 };
 
-// Asistencia de IA: OpenAI Codex adaptó las vistas y los tiempos de Android al ASCII.
+// Asistencia de IA: OpenAI Codex adaptó las vistas y los tiempos de Android a Vitral Vivo.
 class ProcesadorAndroid {
     static constexpr int vistaPortal = 9;
 
@@ -181,7 +181,7 @@ private:
         cpu.procesar(bgr, p);
         Mat imagen;
         if (vista >= 3 && vista <= 8) imagen = etapa(cpu, vista);
-        else if (vista != 2) imagen = dibujarAscii(cpu.cuadricula(), rgba.size());
+        else if (vista != 2) imagen = dibujarVitral(cpu.cuadricula(), rgba.size());
         prepararVista(rgba, imagen, salidaCpu, vista);
         return milisegundos(inicio);
     }
@@ -202,14 +202,14 @@ private:
         t.filtroGpuMs = milisegundos(filtro);
         auto descarga = Reloj::now();
         Mat imagen;
-        CuadriculaAscii cuadricula;
+        CuadriculaVitral cuadricula;
         if (vista >= 3 && vista <= 8) etapa(gpu, vista).copyTo(imagen);
         else if (vista != 2) cuadricula = gpu.cuadricula();
         ocl::finish();
         t.descargaMs = milisegundos(descarga);
         // La descarga se mide aparte; el dibujo CPU pertenece al total de la ruta.
         if (vista == 0 || vista == 1 || vista == vistaPortal)
-            imagen = dibujarAscii(cuadricula, rgba.size());
+            imagen = dibujarVitral(cuadricula, rgba.size());
         prepararVista(rgba, imagen, salidaGpu, vista);
         return milisegundos(inicio);
     }
