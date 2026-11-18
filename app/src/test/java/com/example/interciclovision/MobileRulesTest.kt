@@ -5,7 +5,7 @@ import org.junit.Test
 
 class MobileRulesTest {
     @Test fun controlsMatchNativeDefaultsAndStayInRange() {
-        assertArrayEquals(intArrayOf(40, 5, 173, 30, 100, 8, 1, 125, 100, 115, 1, 150),
+        assertArrayEquals(intArrayOf(40, 5, 173, 30, 100, 9, 150),
             ParametrosMoviles.iniciales())
         ParametrosMoviles.controles.forEach { control ->
             for (progress in 0..control.maximoProgreso) {
@@ -14,9 +14,15 @@ class MobileRulesTest {
                 assertEquals(0, (raw - control.minimo) % control.paso)
             }
         }
+        assertEquals(7, ParametrosMoviles.controles.size)
         val invalid = ParametrosMoviles.iniciales()
         invalid[1] = 4
         assertThrows(IllegalArgumentException::class.java) { ParametrosMoviles.validar(invalid) }
+        for (celda in intArrayOf(5, 25)) {
+            val fuera = ParametrosMoviles.iniciales().apply { this[5] = celda }
+            assertThrows(IllegalArgumentException::class.java) { ParametrosMoviles.validar(fuera) }
+        }
+        assertThrows(IllegalArgumentException::class.java) { ParametrosMoviles.validar(IntArray(12)) }
     }
 
     @Test fun cpuPercentageUsesLogicalCpuCapacity() {

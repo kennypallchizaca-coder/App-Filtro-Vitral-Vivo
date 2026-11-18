@@ -5,6 +5,7 @@
 #include "ProcesadorAndroid.hpp"
 #include <memory>
 #include <mutex>
+#include <array>
 
 namespace {
 std::mutex acceso;
@@ -30,18 +31,19 @@ Java_com_example_interciclovision_MainActivity_stringFromJNI(
     return env->NewStringUTF(hello.c_str());
 }
 
+// Asistencia de IA: OpenAI Codex ajustó el puente JNI a los siete controles ASCII.
 extern "C" JNIEXPORT jdoubleArray JNICALL
 Java_com_example_interciclovision_MainActivity_procesarFrame(
         JNIEnv* env, jobject, jlong entrada, jlong salida, jintArray controles,
         jboolean gpu, jint vista, jboolean comparar) {
     try {
-        if (!entrada || !salida || !controles || env->GetArrayLength(controles) != 12)
+        std::array<jint, 7> datos;
+        if (!entrada || !salida || !controles || env->GetArrayLength(controles) != datos.size())
             throw std::invalid_argument("Frame o controles invalidos");
-        jint datos[12];
-        env->GetIntArrayRegion(controles, 0, 12, datos);
+        env->GetIntArrayRegion(controles, 0, datos.size(), datos.data());
         if (env->ExceptionCheck())
             return nullptr;
-        std::vector<int> valores(datos, datos + 12);
+        std::vector<int> valores(datos.begin(), datos.end());
         std::lock_guard<std::mutex> bloqueo(acceso);
         if (!procesador)
             procesador = std::make_unique<ProcesadorAndroid>();

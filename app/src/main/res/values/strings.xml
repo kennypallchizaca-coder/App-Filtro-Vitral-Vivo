@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">IntercicloVision</string>
-    <string name="app_heading">VISIÓN / CÓMIC</string>
+    <string name="app_heading">VISIÓN / ASCII</string>
     <string name="comparison_caption">Original y efecto completos</string>
     <string name="camera_description">Video de la cámara con la vista seleccionada</string>
     <string name="camera_permission_message">Permite el acceso a la cámara para comenzar.</string>
@@ -24,7 +24,7 @@
     <string name="live_backend">Imagen mostrada: %1$s\n%2$s</string>
     <string-array name="views">
         <item>Comparación completa</item>
-        <item>Spiderman</item>
+        <item>ASCII</item>
         <item>Original</item>
         <item>Gris</item>
         <item>Mediana</item>
@@ -32,7 +32,7 @@
         <item>Sobel combinado</item>
         <item>Respuesta del kernel propio</item>
         <item>Mascara de bordes</item>
-        <item>Portal cómic</item>
+        <item>Portal ASCII</item>
     </string-array>
     <string name="comparison_horizontal">Original (izquierda) / efecto (derecha)</string>
     <string name="comparison_vertical">Original (arriba) / efecto (abajo)</string>

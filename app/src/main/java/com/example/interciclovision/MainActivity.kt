@@ -176,11 +176,13 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
     private fun tienePermiso() = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
         PackageManager.PERMISSION_GRANTED
 
+    // Asistencia de IA: OpenAI Codex corrigió el estado de espera al volver a abrir la cámara.
     private fun activarCamara() {
         if (!::binding.isInitialized || !reanudada || !tienePermiso()) return
         falloFrame = false
         ultimoFrame = SystemClock.elapsedRealtime()
         binding.emptyPreview.setText(R.string.camera_wait)
+        binding.emptyPreview.visibility = View.VISIBLE
         binding.cameraView.visibility = View.VISIBLE
         binding.cameraView.setCameraPermissionGranted()
         binding.cameraView.enableView()
@@ -240,10 +242,11 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
             val tiempos = procesarFrame(rgba.nativeObjAddr, destino.nativeObjAddr,
                 parametros, usarGpu, vistaActual, true)
             actualizarRecursos()
-            val dispositivo = informacionGpu()
             val ahora = SystemClock.elapsedRealtime()
             if (ahora - ultimaUi >= 500) {
                 ultimaUi = ahora
+                // Asistencia de IA: OpenAI Codex limitó esta consulta JNI al ritmo de la interfaz.
+                val dispositivo = informacionGpu()
                 val r = recursos
                 val comparacionVertical = rgba.rows() > rgba.cols()
                 runOnUiThread {

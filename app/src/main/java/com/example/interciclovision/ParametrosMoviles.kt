@@ -13,6 +13,7 @@ data class ControlFiltro(val nombre: String, val minimo: Int,
         else String.format(Locale.US, "%.2f", valor.toDouble() / escala)
 }
 
+// Asistencia de IA: OpenAI Codex adaptó los rangos visibles a los parámetros ASCII.
 object ParametrosMoviles {
     val controles = listOf(
         ControlFiltro("Umbral", 0, 255, 1, 40),
@@ -20,12 +21,7 @@ object ParametrosMoviles {
         ControlFiltro("Sigma", 10, 1000, 1, 173, 100),
         ControlFiltro("Peso del filtro propio", 0, 100, 1, 30, 100),
         ControlFiltro("Diagonal del kernel", 0, 300, 1, 100, 100),
-        ControlFiltro("Niveles de color", 2, 16, 1, 8),
-        ControlFiltro("Radio halftone", 0, 3, 1, 1),
-        ControlFiltro("Saturación", 0, 300, 1, 125, 100),
-        ControlFiltro("Brillo", 0, 300, 1, 100, 100),
-        ControlFiltro("Neón", 0, 300, 1, 115, 100),
-        ControlFiltro("Glitch RGB", 0, 3, 1, 1),
+        ControlFiltro("Tamaño de celda", 6, 24, 1, 9),
         ControlFiltro("Contraste CLAHE", 10, 800, 1, 150, 100)
     )
     fun iniciales() = controles.map { it.inicial }.toIntArray()

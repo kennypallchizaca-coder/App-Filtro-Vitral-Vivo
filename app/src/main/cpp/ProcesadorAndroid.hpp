@@ -12,23 +12,33 @@ using namespace std;
 using namespace cv;
 
 inline Parametros parametrosDesdeControles(const vector<int>& v) {
-    if (v.size() != 12)
-        throw invalid_argument("Se requieren los 12 parametros");
+    if (v.size() != 7)
+        throw invalid_argument("Se requieren los 7 parametros");
     Parametros p;
     p.umbral = v[0];
     p.tamGauss = v[1];
     p.sigma = v[2] / 100.0;
     p.pesoPropio = v[3] / 100.0;
     p.diagonal = v[4] / 100.0;
-    p.niveles = v[5];
-    p.radioPuntos = v[6];
-    p.saturacion = v[7] / 100.0;
-    p.brillo = v[8] / 100.0;
-    p.neon = v[9] / 100.0;
-    p.desplazamiento = v[10];
-    p.contraste = v[11] / 100.0;
+    p.celda = v[5];
+    p.contraste = v[6] / 100.0;
     p.validar();
     return p;
+}
+
+inline Rect regionPortal(Size tamano) {
+    int ancho = tamano.width - tamano.width / 2;
+    int alto = tamano.height - tamano.height / 4;
+    return Rect((tamano.width - ancho) / 2, (tamano.height - alto) / 2, ancho, alto);
+}
+
+// Recupera la cámara fuera del marco y conserva el ASCII dentro.
+inline void aplicarPortal(const Mat& original, Mat& resultado) {
+    if (original.empty() || original.size() != resultado.size() || original.type() != resultado.type())
+        throw invalid_argument("El portal requiere dos imagenes del mismo tamano y tipo");
+    Mat fuera(original.size(), CV_8UC1, Scalar(255));
+    fuera(regionPortal(original.size())).setTo(0);
+    original.copyTo(resultado, fuera);
 }
 
 struct TiemposAndroid {
@@ -38,6 +48,7 @@ struct TiemposAndroid {
     bool gpuUsada = false;
 };
 
+// Asistencia de IA: OpenAI Codex adaptó las vistas y los tiempos de Android al ASCII.
 class ProcesadorAndroid {
     static constexpr int vistaPortal = 9;
 
@@ -108,9 +119,9 @@ private:
         return gpuDisponible;
     }
 
-    // Selecciona el resultado final o una etapa intermedia sin recalcular los filtros.
+    // Selecciona una etapa intermedia sin recalcular los filtros.
     template <class Imagen>
-    static const Imagen& etapa(Efecto<Imagen>& efecto, const Imagen& final, int vista) {
+    static const Imagen& etapa(Efecto<Imagen>& efecto, int vista) {
         switch (vista) {
             case 3: return efecto.gris;
             case 4: return efecto.mediana;
@@ -118,7 +129,7 @@ private:
             case 6: return efecto.gradiente;
             case 7: return efecto.filtroPropioAbs;
             case 8: return efecto.binaria;
-            default: return final;
+            default: throw invalid_argument("Se requiere una vista intermedia");
         }
     }
 
@@ -167,8 +178,11 @@ private:
         ocl::setUseOpenCL(false);
         auto inicio = Reloj::now();
         cvtColor(rgba, bgr, COLOR_RGBA2BGR);
-        const Mat& final = cpu.procesar(bgr, p);
-        prepararVista(rgba, etapa(cpu, final, vista), salidaCpu, vista);
+        cpu.procesar(bgr, p);
+        Mat imagen;
+        if (vista >= 3 && vista <= 8) imagen = etapa(cpu, vista);
+        else if (vista != 2) imagen = dibujarAscii(cpu.cuadricula(), rgba.size());
+        prepararVista(rgba, imagen, salidaCpu, vista);
         return milisegundos(inicio);
     }
 
@@ -183,14 +197,19 @@ private:
         ocl::finish();
         t.cargaMs = milisegundos(carga);
         auto filtro = Reloj::now();
-        const UMat& final = gpu.procesar(entradaGpu, p);
+        gpu.procesar(entradaGpu, p);
         ocl::finish();
         t.filtroGpuMs = milisegundos(filtro);
         auto descarga = Reloj::now();
         Mat imagen;
-        etapa(gpu, final, vista).copyTo(imagen);
+        CuadriculaAscii cuadricula;
+        if (vista >= 3 && vista <= 8) etapa(gpu, vista).copyTo(imagen);
+        else if (vista != 2) cuadricula = gpu.cuadricula();
         ocl::finish();
         t.descargaMs = milisegundos(descarga);
+        // La descarga se mide aparte; el dibujo CPU pertenece al total de la ruta.
+        if (vista == 0 || vista == 1 || vista == vistaPortal)
+            imagen = dibujarAscii(cuadricula, rgba.size());
         prepararVista(rgba, imagen, salidaGpu, vista);
         return milisegundos(inicio);
     }

@@ -27,8 +27,18 @@ class NativeEffectInstrumentedTest {
                         assertEquals(rgba.size(), output.size())
                         assertEquals(CvType.CV_8UC4, output.type())
                         if (view == 2) assertEquals(0.0, Core.norm(original, output, Core.NORM_INF), 0.0)
+                        if (view == 1) assertTrue(Core.norm(original, output, Core.NORM_INF) > 0)
                     }
                     assertEquals(0.0, Core.norm(original, rgba, Core.NORM_INF), 0.0)
+                    val before = output.clone()
+                    try {
+                        for (invalid in listOf(IntArray(12), ParametrosMoviles.iniciales().apply { this[5] = 5 })) {
+                            assertThrows(IllegalArgumentException::class.java) {
+                                activity.procesarFrame(rgba.nativeObjAddr, output.nativeObjAddr, invalid, false, 1, false)
+                            }
+                            assertEquals(0.0, Core.norm(before, output, Core.NORM_INF), 0.0)
+                        }
+                    } finally { before.release() }
                     val times = activity.procesarFrame(rgba.nativeObjAddr, output.nativeObjAddr,
                         ParametrosMoviles.iniciales(), true, 1, true)
                     assertTrue(times[0] > 0)

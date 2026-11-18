@@ -14,6 +14,11 @@ def luminance(color):
 
 
 class AndroidAppTest(unittest.TestCase):
+    def test_ascii_has_seven_controls(self):
+        controls = (ROOT / "app/src/main/java/com/example/interciclovision/ParametrosMoviles.kt").read_text(encoding="utf-8")
+        self.assertEqual(controls.count('        ControlFiltro('), 7)
+        self.assertIn('ControlFiltro("Tamaño de celda", 6, 24, 1, 9)', controls)
+
     def test_academic_build_excludes_arcore_prototype(self):
         settings = (ROOT / "settings.gradle.kts").read_text(encoding="utf-8")
         self.assertIn('include(":app")', settings)
@@ -37,6 +42,13 @@ class AndroidAppTest(unittest.TestCase):
         activity = (ROOT / "app/src/main/java/com/example/interciclovision/MainActivity.kt").read_text(encoding="utf-8")
         self.assertNotIn("binding.transformation", activity)
 
+    def test_camera_restart_restores_waiting_message(self):
+        activity = (ROOT / "app/src/main/java/com/example/interciclovision/MainActivity.kt").read_text(encoding="utf-8")
+        activate = activity.split("private fun activarCamara()", 1)[1].split("override fun onResume", 1)[0]
+        self.assertIn("binding.emptyPreview.visibility = View.VISIBLE", activate.split("enableView()", 1)[0])
+        started = activity.split("override fun onCameraViewStarted", 1)[1].split("override fun onCameraViewStopped", 1)[0]
+        self.assertIn("binding.emptyPreview.visibility = View.GONE", started)
+
     def test_camera_is_explicit_and_no_storage_or_network_permission(self):
         manifest = ET.parse(ROOT / "app/src/main/AndroidManifest.xml")
         permissions = {entry.get(A + "name") for entry in manifest.findall("uses-permission")}
@@ -48,9 +60,9 @@ class AndroidAppTest(unittest.TestCase):
         strings = ET.parse(ROOT / "app/src/main/res/values/strings.xml")
         views = strings.find("./string-array[@name='views']")
         self.assertEqual(len(views), 10)
-        self.assertEqual(views[1].text, "Spiderman")
+        self.assertEqual(views[1].text, "ASCII")
         self.assertEqual(views[7].text, "Respuesta del kernel propio")
-        self.assertEqual(views[9].text, "Portal cómic")
+        self.assertEqual(views[9].text, "Portal ASCII")
         layout = ET.parse(ROOT / "app/src/main/res/layout/activity_main.xml")
         buttons = [node for node in layout.iter() if node.tag.endswith("Button")]
         ids = {button.get(A + "id") for button in buttons}

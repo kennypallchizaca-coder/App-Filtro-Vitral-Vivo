@@ -10,7 +10,7 @@ using namespace cv;
 using namespace std;
 
 int main() {
-    vector<int> valores{40, 5, 173, 30, 100, 8, 1, 125, 100, 115, 1, 150};
+    vector<int> valores{40, 5, 173, 30, 100, 9, 150};
     Parametros p = parametrosDesdeControles(valores);
     assert(p.tamGauss == 5 && p.sigma == 1.73 && p.pesoPropio == 0.3);
     assert(abs(sum(crearKernel(1))[0]) < 1e-6);
@@ -31,7 +31,8 @@ int main() {
             assert(norm(salida(Rect(0, 12, 31, 23)), originalCompleto, NORM_INF) == 0);
             Efecto<Mat> referenciaComparacion;
             cvtColor(rgba, bgr, COLOR_RGBA2BGR);
-            cvtColor(referenciaComparacion.procesar(bgr, p), final, COLOR_BGR2RGBA);
+            referenciaComparacion.procesar(bgr, p);
+            cvtColor(dibujarAscii(referenciaComparacion.cuadricula(), rgba.size()), final, COLOR_BGR2RGBA);
             resize(final, finalCompleto, Size(32, 24), 0, 0, INTER_AREA);
             assert(norm(salida(Rect(31, 11, 32, 24)), finalCompleto, NORM_INF) == 0);
         }
@@ -46,17 +47,28 @@ int main() {
     Mat verticalBgr, verticalFinal;
     Efecto<Mat> referenciaVertical;
     cvtColor(vertical, verticalBgr, COLOR_RGBA2BGR);
-    cvtColor(referenciaVertical.procesar(verticalBgr, p), verticalFinal, COLOR_BGR2RGBA);
+    referenciaVertical.procesar(verticalBgr, p);
+    cvtColor(dibujarAscii(referenciaVertical.cuadricula(), vertical.size()), verticalFinal, COLOR_BGR2RGBA);
     resize(verticalFinal, miniatura, Size(24, 32), 0, 0, INTER_AREA);
     assert(norm(comparacionVertical(Rect(11, 31, 24, 32)), miniatura, NORM_INF) == 0);
 
     cvtColor(rgba, original, COLOR_RGBA2BGR);
     Efecto<Mat> referencia;
     Mat esperado;
-    cvtColor(referencia.procesar(original, p), esperado, COLOR_BGR2RGBA);
+    referencia.procesar(original, p);
+    cvtColor(dibujarAscii(referencia.cuadricula(), rgba.size()), esperado, COLOR_BGR2RGBA);
     procesador.procesar(rgba, salida, valores, false, 1, false);
     assert(norm(salida, esperado, NORM_INF) == 0);
 
+    assert(norm(salida, rgba, NORM_INF) > 0);
+    for (Size tamano : {Size(1, 1), Size(5, 7), Size(24, 24), Size(65, 49)}) {
+        Mat pequena(tamano, CV_8UC4, Scalar(80, 130, 180, 255)), resultado;
+        for (int vista : {0, 1, 2, 9}) {
+            procesador.procesar(pequena, resultado, valores, false, vista, false);
+            assert(resultado.size() == tamano && resultado.type() == CV_8UC4);
+            if (vista == 2) assert(norm(resultado, pequena, NORM_INF) == 0);
+        }
+    }
     Mat antes = salida.clone();
     auto invalido = valores;
     invalido[1] = 4;
@@ -69,10 +81,18 @@ int main() {
     catch (const invalid_argument&) { rechazo = true; }
     assert(rechazo && norm(salida, antes, NORM_INF) == 0);
     rechazo = false;
-    try { parametrosDesdeControles(vector<int>(11)); }
+    try { parametrosDesdeControles(vector<int>(12)); }
     catch (const invalid_argument&) { rechazo = true; }
     assert(rechazo);
 
+    for (int celda : {5, 25}) {
+        invalido = valores;
+        invalido[5] = celda;
+        rechazo = false;
+        try { procesador.procesar(rgba, salida, invalido, false, 1, false); }
+        catch (const invalid_argument&) { rechazo = true; }
+        assert(rechazo && norm(salida, antes, NORM_INF) == 0);
+    }
     auto cpuEnVivo = procesador.procesar(rgba, salida, valores, false, 1, true);
     assert(cpuEnVivo.cpuMs > 0 && !cpuEnVivo.gpuUsada);
     assert(norm(salida, esperado, NORM_INF) == 0);
@@ -106,5 +126,5 @@ int main() {
     try { procesador.procesar(rgba, salida, valores, false, 10, false); }
     catch (const invalid_argument&) { rechazo = true; }
     assert(rechazo && norm(salida, antes, NORM_INF) == 0);
-    cout << "Portal movil: interior comic y exterior real en ambas orientaciones\n";
+    cout << "Portal movil: interior ASCII y exterior real en ambas orientaciones\n";
 }
