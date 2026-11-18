@@ -14,9 +14,9 @@
 
 ## Efecto ASCII y código de clase
 
-`Principal.hpp` comparte el preprocesamiento y el dibujo con escritorio. La luminosidad selecciona caracteres de distinta densidad y la respuesta del kernel propio participa en la máscara que selecciona símbolos de contorno. Se conservan gris, mediana, Gaussiano, Sobel combinado, respuesta del kernel y máscara como vistas intermedias.
+`Principal.hpp` comparte el preprocesamiento y el dibujo con escritorio. La luminosidad selecciona caracteres de distinta densidad y la respuesta del kernel propio participa en la máscara que sube un nivel de densidad en las celdas con borde. No se añaden rayas direccionales. Se conservan gris, mediana, Gaussiano, Sobel combinado, respuesta del kernel y máscara como vistas intermedias.
 
-`Efecto<Mat>` y `Efecto<UMat>` construyen la misma cuadrícula reducida. `cuadricula()` copia o descarga sus mapas; `dibujarAscii` usa `putText` en CPU sobre una imagen BGR del tamaño original. No se requiere fuente ni dependencia adicional de Android. La comparación y el portal conservan `Rect` y `copyTo` de los ejemplos de clase.
+`Efecto<Mat>` y `Efecto<UMat>` construyen la misma cuadrícula reducida. `cuadricula()` copia o descarga solo brillo y máscara de bordes; `dibujarAscii` usa `putText` en CPU sobre una imagen BGR del tamaño original. No se requiere fuente ni dependencia adicional de Android. La comparación y el portal conservan `Rect` y `copyTo` de los ejemplos de clase.
 
 ## Kernel propio
 
@@ -26,7 +26,7 @@ K = 1/(4+2a)  *  [ -1    4+2a     -1 ]
                  [  0     -1      -a ]
 ```
 
-La suma es cero: una región uniforme da respuesta cero. `a` regula dos vecinos diagonales. La respuesta conserva signo en CV_32F antes de obtener su magnitud. `pesoPropio` la mezcla con Sobel. La simetría de 180 grados hace coincidir aquí correlación y convolución. El resultado artístico se obtiene de luminosidad y símbolos de contorno, no de una conversión de color tipo cómic.
+La suma es cero: una región uniforme da respuesta cero. `a` regula dos vecinos diagonales. La respuesta conserva signo en CV_32F antes de obtener su magnitud. `pesoPropio` la mezcla con Sobel. La simetría de 180 grados hace coincidir aquí correlación y convolución. El resultado artístico se obtiene de una cuadrícula verde de caracteres con distinta densidad, sin un efecto cómic.
 
 ## Controles
 
