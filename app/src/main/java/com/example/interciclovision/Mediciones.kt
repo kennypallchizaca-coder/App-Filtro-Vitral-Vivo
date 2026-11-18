@@ -4,6 +4,7 @@ data class RecursosMedidos(val fps: Double = Double.NaN, val cpuPorcentaje: Doub
                            val ramPssMiB: Double = Double.NaN, val ramLibreMiB: Double = Double.NaN,
                            val procesoMs: Double = Double.NaN)
 
+// Asistencia de IA (OpenAI Codex): ventanas reiniciables para no atribuir trabajo previo al modo nuevo.
 internal class VentanaMedicion {
     private var marca: Long? = null
     private var baseCpu = 0L

@@ -7,7 +7,7 @@
 3. La actividad toma los parámetros y la vista actuales y llama a JNI.
 4. `native-lib.cpp` valida direcciones y parámetros, serializa procesamiento/reinicio y traduce excepciones.
 5. `ProcesadorAndroid.hpp` convierte RGBA a BGR y utiliza el mismo `Efecto<Mat>` / `Efecto<UMat>` del escritorio.
-6. Ambas rutas se cronometran sobre el mismo fotograma; el selector CPU/GPU decide qué resultado se muestra. Si no hay GPU utilizable, se informa el respaldo CPU.
+6. La aplicación ejecuta el modo seleccionado, CPU/Mat o GPU/OpenCL. Al cambiar de modo arranca una ventana nueva y conserva la última muestra completa de cada ruta. El respaldo CPU se indica y no genera una muestra OpenCL.
 7. Se vuelve a RGBA y se conserva el tamaño de entrada requerido por el Bitmap.
 8. La comparación encaja original y efecto completos: arriba/abajo o izquierda/derecha según las dimensiones de cámara. No estira ni recorta las imágenes.
 9. Los textos de tiempos, FPS y recursos se actualizan cada medio segundo, sin guardar archivos.
@@ -30,13 +30,13 @@ La suma es cero: una región uniforme da respuesta cero. `a` regula dos vecinos 
 
 ## Controles
 
-`ParametrosMoviles.kt` define siete controles en el mismo orden que escritorio y JNI: umbral, tamaño Gaussiano, sigma, peso del filtro propio, diagonal del kernel, tamaño de celda y contraste CLAHE. Los decimales viajan como enteros escalados por 100. El Gaussiano avanza de 2 en 2 entre 3 y 51; la celda admite 6..24 píxeles.
+`ParametrosMoviles.kt` define siete controles en el mismo orden que escritorio y JNI: umbral, tamaño Gaussiano, sigma, peso del filtro propio, diagonal del kernel, escala del vitral y contraste CLAHE. Los decimales viajan como enteros escalados por 100. El tamaño Gaussiano es impar entre 3 y 51. La escala va de 6 a 24 y el lado del bloque base mide cerca de tres veces ese valor.
 
 Los valores iniciales son `[40, 5, 173, 30, 100, 9, 150]`. Cada cambio publica una copia nueva del arreglo; JNI y C++ validan tamaño y rangos antes de modificar la salida. Un estado guardado antiguo de doce valores se descarta por incompatible y se conservan los valores iniciales.
 
 ## Mediciones en vivo
 
-`Mediciones.kt` contiene únicamente los valores de recursos y el cálculo del porcentaje CPU. No hay lista de muestras, formato CSV, exportador, selector de destino ni hilo de escritura.
+`Mediciones.kt` completa ventanas de al menos un segundo y calcula el tiempo medio por fotograma, FPS y porcentaje de CPU. La actividad añade PSS y RAM libre al cerrar cada ventana. Las dos últimas muestras completas (una por modo) solo viven en memoria; no hay exportación CSV.
 
 - CPU: Mat con OpenCL desactivado.
 - GPU: preprocesamiento UMat con un dispositivo OpenCL comprobado; dibujo del vitral en CPU. `ocl::finish` espera el trabajo antes de cronometrar.

@@ -250,7 +250,7 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
             val cambioModo = modo !== modoMedido
             val cambioVista = parametros !== parametrosMedidos || vistaActual != vistaMedida
             if (cambioModo) {
-                // Soltar los buffers de la ruta anterior antes de medir la memoria.
+                // Asistencia de IA (OpenAI Codex): se liberan búferes del modo anterior antes de medir PSS.
                 reiniciarProcesador()
                 modoMedido = modo
             }
