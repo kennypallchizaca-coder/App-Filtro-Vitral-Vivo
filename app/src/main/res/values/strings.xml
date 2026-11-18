@@ -1,3 +1,39 @@
 <resources>
     <string name="app_name">IntercicloVision</string>
+    <string name="app_heading">VITRAL VIVO</string>
+    <string name="comparison_caption">Original (izquierda) / efecto (derecha)</string>
+    <string name="camera_description">Video de la cámara con la vista seleccionada</string>
+    <string name="camera_permission_message">Permite el acceso a la cámara para comenzar.</string>
+    <string name="allow_camera">Permitir cámara</string>
+    <string name="restart_camera">Reiniciar cámara</string>
+    <string name="open_camera_settings">Abrir permiso en Ajustes</string>
+    <string name="camera_denied">Cámara sin permiso. Puedes concederlo con el boton.</string>
+    <string name="camera_wait">Abriendo cámara…</string>
+    <string name="camera_timeout">No llegan fotogramas. Revisa el acceso a la cámara o pulsa Reiniciar.</string>
+    <string name="camera_error">No se pudo procesar el video: %1$s</string>
+    <string name="opencv_error">No se pudo cargar OpenCV. Revisa la instalacion del APK.</string>
+    <string name="waiting_frames">Esperando fotogramas y mediciones reales…</string>
+    <string name="cpu_mode">CPU / Mat</string>
+    <string name="gpu_mode">GPU / OpenCL</string>
+    <string name="cpu_fallback">CPU / Mat (respaldo)</string>
+    <string name="view_label">Vista</string>
+    <string name="switch_camera">Cambiar cámara</string>
+    <string name="reset_controls">Restablecer</string>
+    <string name="filter_controls">Parametros del filtro</string>
+    <string name="control_value">%1$s: %2$s</string>
+    <string name="live_metrics">Últimas muestras por modo:\n%1$s\n%2$s</string>
+    <string name="mode_metrics">%1$s: %2$s ms / %3$s FPS\nPSS %4$s MiB · CPU %5$s %% · RAM libre %6$s MiB</string>
+    <string name="live_backend">Modo activo: %1$s\n%2$s</string>
+    <string-array name="views">
+        <item>Comparación completa</item>
+        <item>Vitral Vivo</item>
+        <item>Original</item>
+        <item>Gris</item>
+        <item>Mediana</item>
+        <item>Gaussiano</item>
+        <item>Sobel combinado</item>
+        <item>Respuesta del kernel propio</item>
+        <item>Mascara de bordes</item>
+        <item>Portal Vitral</item>
+    </string-array>
 </resources>

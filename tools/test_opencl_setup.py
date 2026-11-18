@@ -1,4 +1,4 @@
-"""Check local OpenCV packaging without connecting to an Android device."""
+"""Comprueba el empaquetado local de OpenCV sin conectarse a un dispositivo Android."""
 import json
 import struct
 import unittest

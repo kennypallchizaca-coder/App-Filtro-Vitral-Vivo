@@ -1,6 +1,6 @@
 # OpenCV with OpenCL on Android
 
-This setup prepares the current JNI capability screen. The camera and desktop filter have not been ported yet.
+This library is used by the Android camera/filter application. See README.md and docs/CODIGO_ANDROID.md for the mobile UI, CPU/GPU modes and measurement workflow.
 
 ## Run in Android Studio
 
@@ -9,7 +9,7 @@ This setup prepares the current JNI capability screen. The camera and desktop fi
 3. Select the connected Samsung S25 Ultra and the `app` configuration.
 4. Click **Run**. Accept any installation prompt on the phone yourself.
 
-The screen reports OpenCV's version and `cv::ocl::haveOpenCL()`. A positive availability result is not a GPU execution benchmark. If it remains unavailable, the phone's vendor OpenCL runtime still needs investigation.
+The camera application starts in CPU mode and can select UMat/OpenCL. The native processor checks GPU device availability and actual OpenCL enablement on the processing thread, synchronizes work, and reports CPU fallback. Runtime availability alone is not a GPU benchmark.
 
 ## Local dependency
 
@@ -54,7 +54,7 @@ Native source and build outputs are kept outside this application:
 - `C:\Users\kenny\OpenCV-Android\opencv-5.0.0`
 - `C:\Users\kenny\OpenCV-Android\build-arm64-opencl`
 
-The exact native build arguments and results are recorded in the build logs and `odd/tasks/android-opencl.md`. The app's existing JNI function, package name and CMake imported target are preserved.
+The app's existing JNI function, package name and CMake imported target are preserved.
 
 ## Reproduce the native build
 

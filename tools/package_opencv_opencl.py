@@ -1,4 +1,4 @@
-"""Keep the official AAR interface and replace its ARM64 native binaries."""
+"""Conserva la interfaz del AAR oficial y sustituye sus bibliotecas nativas ARM64."""
 import argparse
 import json
 import re
