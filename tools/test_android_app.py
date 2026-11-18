@@ -35,6 +35,15 @@ class AndroidAppTest(unittest.TestCase):
         self.assertIn("actualizarRecursos(ahora, tiempos[indice])", activity)
         self.assertIn("parametros, modo.gpu, vistaActual, false)", activity)
 
+    def test_measurement_text_cannot_resize_camera_preview(self):
+        layout = ET.parse(ROOT / "app/src/main/res/layout/activity_main.xml")
+        preview = layout.find(".//*[@"+A+"id='@+id/preview_panel']")
+        controls = layout.find(".//*[@"+A+"id='@+id/control_scroll']")
+        for label in ("metrics", "status"):
+            child = f".//*[@{A}id='@+id/{label}']"
+            self.assertIsNone(preview.find(child))
+            self.assertIsNotNone(controls.find(child))
+
     def test_portal_does_not_require_transformation_slider(self):
         layout = ET.parse(ROOT / "app/src/main/res/layout/activity_main.xml")
         control = layout.find(".//SeekBar[@" + A + "id='@+id/transformation']")

@@ -43,14 +43,17 @@ int main() {
     randu(vertical, Scalar(0, 0, 0, 255), Scalar(256, 256, 256, 256));
     procesador.procesar(vertical, comparacionVertical, valores, false, 0, false);
     resize(vertical, miniatura, Size(23, 31), 0, 0, INTER_AREA);
-    assert(norm(comparacionVertical(Rect(12, 0, 23, 31)), miniatura, NORM_INF) == 0);
+    if (norm(comparacionVertical(Rect(0, 16, 23, 31)), miniatura, NORM_INF) != 0) {
+        cerr << "Portrait must place the complete original on the left\n";
+        return 1;
+    }
     Mat verticalBgr, verticalFinal;
     Efecto<Mat> referenciaVertical;
     cvtColor(vertical, verticalBgr, COLOR_RGBA2BGR);
     referenciaVertical.procesar(verticalBgr, p);
     cvtColor(dibujarVitral(referenciaVertical.cuadricula(), vertical.size()), verticalFinal, COLOR_BGR2RGBA);
     resize(verticalFinal, miniatura, Size(24, 32), 0, 0, INTER_AREA);
-    assert(norm(comparacionVertical(Rect(11, 31, 24, 32)), miniatura, NORM_INF) == 0);
+    assert(norm(comparacionVertical(Rect(23, 15, 24, 32)), miniatura, NORM_INF) == 0);
 
     cvtColor(rgba, original, COLOR_RGBA2BGR);
     Efecto<Mat> referencia;

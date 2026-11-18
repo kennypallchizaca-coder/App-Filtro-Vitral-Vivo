@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">IntercicloVision</string>
     <string name="app_heading">VITRAL VIVO</string>
-    <string name="comparison_caption">Original y efecto completos</string>
+    <string name="comparison_caption">Original (izquierda) / efecto (derecha)</string>
     <string name="camera_description">Video de la cámara con la vista seleccionada</string>
     <string name="camera_permission_message">Permite el acceso a la cámara para comenzar.</string>
     <string name="allow_camera">Permitir cámara</string>
@@ -36,6 +36,4 @@
         <item>Mascara de bordes</item>
         <item>Portal Vitral</item>
     </string-array>
-    <string name="comparison_horizontal">Original (izquierda) / efecto (derecha)</string>
-    <string name="comparison_vertical">Original (arriba) / efecto (abajo)</string>
 </resources>

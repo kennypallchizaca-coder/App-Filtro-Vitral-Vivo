@@ -24,13 +24,6 @@
                     android:text="@string/camera_permission_message" android:textColor="@color/tinta"
                     android:textSize="18sp" />
             </FrameLayout>
-            <TextView android:id="@+id/metrics" android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:paddingTop="8dp"
-                android:text="@string/waiting_frames" android:textColor="@color/tinta" android:textSize="13sp" />
-            <TextView android:id="@+id/status" android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:text="@string/waiting_frames"
-                android:textColor="@color/tinta" android:textSize="12sp" android:maxLines="3"
-                android:paddingBottom="8dp" />
         </LinearLayout>
         <ScrollView android:id="@+id/control_scroll" android:layout_width="match_parent"
             android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true">
@@ -48,6 +41,14 @@
                         android:layout_height="wrap_content" android:layout_weight="1"
                         android:minHeight="48dp" android:text="@string/gpu_mode" />
                 </RadioGroup>
+                <!-- Las métricas no deben redimensionar la superficie de la cámara. -->
+                <TextView android:id="@+id/metrics" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:paddingTop="8dp"
+                    android:text="@string/waiting_frames" android:textColor="@color/tinta" android:textSize="13sp" />
+                <TextView android:id="@+id/status" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:text="@string/waiting_frames"
+                    android:textColor="@color/tinta" android:textSize="12sp" android:maxLines="3"
+                    android:paddingBottom="8dp" />
                 <TextView android:id="@+id/view_label" android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:labelFor="@id/view_selector"
                     android:text="@string/view_label" android:textSize="16sp" android:textColor="@color/tinta" />

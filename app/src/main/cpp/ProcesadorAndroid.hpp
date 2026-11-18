@@ -139,7 +139,7 @@ private:
             rgba.copyTo(salida);
             return;
         }
-        if (vista != 0 || rgba.cols < 2 || rgba.rows < 2) {
+        if (vista != 0 || rgba.cols < 2) {
             cvtColor(imagen, salida, imagen.channels() == 1 ? COLOR_GRAY2RGBA : COLOR_BGR2RGBA);
             if (vista == vistaPortal) {
                 aplicarPortal(rgba, salida);
@@ -152,15 +152,9 @@ private:
         cvtColor(imagen, efecto, COLOR_BGR2RGBA);
         salida.create(rgba.size(), CV_8UC4);
         salida.setTo(Scalar(247, 243, 232, 255));
-        if (rgba.rows > rgba.cols) {
-            int mitad = rgba.rows / 2;
-            encajar(rgba, salida, Rect(0, 0, rgba.cols, mitad));
-            encajar(efecto, salida, Rect(0, mitad, rgba.cols, rgba.rows - mitad));
-        } else {
-            int mitad = rgba.cols / 2;
-            encajar(rgba, salida, Rect(0, 0, mitad, rgba.rows));
-            encajar(efecto, salida, Rect(mitad, 0, rgba.cols - mitad, rgba.rows));
-        }
+        const int mitad = rgba.cols / 2;
+        encajar(rgba, salida, Rect(0, 0, mitad, rgba.rows));
+        encajar(efecto, salida, Rect(mitad, 0, rgba.cols - mitad, rgba.rows));
     }
 
     // Encaja la imagen completa sin deformarla, como las composiciones de clase.

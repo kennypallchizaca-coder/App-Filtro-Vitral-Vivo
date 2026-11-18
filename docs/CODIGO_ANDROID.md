@@ -9,8 +9,8 @@
 5. `ProcesadorAndroid.hpp` convierte RGBA a BGR y utiliza el mismo `Efecto<Mat>` / `Efecto<UMat>` del escritorio.
 6. La aplicación ejecuta el modo seleccionado, CPU/Mat o GPU/OpenCL. Al cambiar de modo arranca una ventana nueva y conserva la última muestra completa de cada ruta. El respaldo CPU se indica y no genera una muestra OpenCL.
 7. Se vuelve a RGBA y se conserva el tamaño de entrada requerido por el Bitmap.
-8. La comparación encaja original y efecto completos: arriba/abajo o izquierda/derecha según las dimensiones de cámara. No estira ni recorta las imágenes.
-9. Los textos de tiempos, FPS y recursos se actualizan cada medio segundo, sin guardar archivos.
+8. La comparación encaja el original completo a la izquierda y el efecto a la derecha, en ambas orientaciones. No estira ni recorta las imágenes. En vertical pueden quedar espacios libres arriba y abajo.
+9. Los textos de tiempos, FPS y recursos se actualizan cada medio segundo, sin guardar archivos. Están en el panel de controles para que sus cambios de altura no redimensionen la superficie de cámara.
 
 ## Vitral Vivo y código de clase
 

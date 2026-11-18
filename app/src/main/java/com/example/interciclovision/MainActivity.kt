@@ -282,12 +282,9 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
                 val dispositivo = informacionGpu()
                 val cpu = muestras[0]
                 val gpu = muestras[1]
-                val comparacionVertical = rgba.rows() > rgba.cols()
                 runOnUiThread {
                     if (!isDestroyed && reanudada && modo === modoActual &&
                         parametros === valores && vistaActual == vista) {
-                        if (vistaActual == 0) binding.viewCaption.setText(
-                            if (comparacionVertical) R.string.comparison_vertical else R.string.comparison_horizontal)
                         binding.metrics.text = getString(R.string.live_metrics,
                             describirMedicion(R.string.cpu_mode, cpu), describirMedicion(R.string.gpu_mode, gpu))
                         val actual = when {

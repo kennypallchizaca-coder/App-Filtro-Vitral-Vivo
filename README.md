@@ -44,7 +44,7 @@ Las pruebas instrumentadas se compilan en el APK de pruebas; ejecutarlas sobre u
 
 VTK corresponde exclusivamente a escritorio. El informe y el vídeo-blog en inglés son entregables académicos globales separados del APK.
 
-El repositorio de escritorio contiene `docs/ENTREGA_PARTE_I.md` y `docs/GUION_VIDEO_EN.md`. Falta probar Vitral Vivo y OpenCL en el S25 Ultra. El APK ARM64 no se corrió en los emuladores x86_64.
+El repositorio de escritorio contiene `docs/ENTREGA_PARTE_I.md` y `docs/GUION_VIDEO_EN.md`. En el S25 Ultra se ejecutó la prueba instrumentada y se comprobó la cámara, el giro, la comparación izquierda/derecha y OpenCL en Adreno 830 con ambas muestras visibles. Falta un benchmark controlado y revisar todas las combinaciones de permisos y cámaras. No se usaron emuladores x86_64.
 
 ## Portal Vitral
 
