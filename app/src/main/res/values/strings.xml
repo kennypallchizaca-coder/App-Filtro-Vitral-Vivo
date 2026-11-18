@@ -18,18 +18,10 @@
     <string name="view_label">Vista</string>
     <string name="switch_camera">Cambiar cámara</string>
     <string name="reset_controls">Restablecer</string>
-    <string name="start_measurement">Medir 120 pares CPU / GPU</string>
-    <string name="stop_measurement">Detener medición</string>
-    <string name="measurement_hint">10 fotogramas de calentamiento. Después, 120 pares con los mismos parámetros.</string>
-    <string name="measurement_progress">Calentamiento / fotogramas: %1$d / 120</string>
-    <string name="export_csv">Guardar mediciones CSV</string>
-    <string name="csv_saved">CSV guardado en la ubicación elegida.</string>
-    <string name="csv_saving">Guardando CSV…</string>
-    <string name="csv_error">No se pudo guardar el CSV: %1$s</string>
     <string name="filter_controls">Parametros del filtro</string>
     <string name="control_value">%1$s: %2$s</string>
     <string name="live_metrics">CPU %1$s ms / GPU %2$s ms / %3$s FPS\nRAM PSS %4$s MiB / CPU proceso %5$s %%\nRAM libre %6$s MiB</string>
-    <string name="live_backend">Modo real: %1$s\n%2$s</string>
+    <string name="live_backend">Imagen mostrada: %1$s\n%2$s</string>
     <string-array name="views">
         <item>Comparación completa</item>
         <item>Spiderman</item>
@@ -38,20 +30,10 @@
         <item>Mediana</item>
         <item>Gaussiano</item>
         <item>Sobel combinado</item>
-        <item>Filtro propio</item>
+        <item>Respuesta del kernel propio</item>
         <item>Mascara de bordes</item>
+        <item>Portal cómic</item>
     </string-array>
-    <string name="new_measurement">Nueva medición</string>
-    <string name="replace_measurement">Se reemplazarán las mediciones actuales. Guarda el CSV antes si quieres conservarlas.</string>
-    <string name="replace">Reemplazar</string>
     <string name="comparison_horizontal">Original (izquierda) / efecto (derecha)</string>
     <string name="comparison_vertical">Original (arriba) / efecto (abajo)</string>
-    <plurals name="measurement_summary">
-        <item quantity="one">%1$d fotograma. Media CPU: %2$s ms / GPU: %3$s ms</item>
-        <item quantity="other">%1$d fotogramas. Media CPU: %2$s ms / GPU: %3$s ms</item>
-    </plurals>
-    <plurals name="measurement_cpu_only">
-        <item quantity="one">%1$d fotograma. Media CPU: %2$s ms. GPU no utilizable.</item>
-        <item quantity="other">%1$d fotogramas. Media CPU: %2$s ms. GPU no utilizable.</item>
-    </plurals>
 </resources>

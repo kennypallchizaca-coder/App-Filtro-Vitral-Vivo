@@ -54,7 +54,7 @@ Native source and build outputs are kept outside this application:
 - `C:\Users\kenny\OpenCV-Android\opencv-5.0.0`
 - `C:\Users\kenny\OpenCV-Android\build-arm64-opencl`
 
-The exact native build arguments and results are recorded in the build logs and `odd/tasks/android-opencl.md`. The app's existing JNI function, package name and CMake imported target are preserved.
+The app's existing JNI function, package name and CMake imported target are preserved.
 
 ## Reproduce the native build
 

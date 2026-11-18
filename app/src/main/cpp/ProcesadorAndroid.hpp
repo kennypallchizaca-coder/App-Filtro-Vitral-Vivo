@@ -38,14 +38,16 @@ struct TiemposAndroid {
     bool gpuUsada = false;
 };
 
-// One camera callback owns the buffers; JNI serializes calls and reset.
 class ProcesadorAndroid {
+    static constexpr int vistaPortal = 9;
+
 public:
+    // Procesa las rutas solicitadas y prepara la vista; JNI serializa cámara y reinicio.
     TiemposAndroid procesar(const Mat& rgba, Mat& salida, const vector<int>& valores,
                             bool usarGpu, int vista, bool comparar) {
         Parametros p = parametrosDesdeControles(valores);
-        if (rgba.empty() || rgba.type() != CV_8UC4 || vista < 0 || vista > 8)
-            throw invalid_argument("Se requiere RGBA 8UC4 y una vista entre 0 y 8");
+        if (rgba.empty() || rgba.type() != CV_8UC4 || vista < 0 || vista > vistaPortal)
+            throw invalid_argument("Se requiere RGBA 8UC4 y una vista valida");
         if (&rgba == &salida || (!salida.empty() && salida.data == rgba.data))
             throw invalid_argument("Entrada y salida deben ser matrices distintas");
 
@@ -106,6 +108,7 @@ private:
         return gpuDisponible;
     }
 
+    // Selecciona el resultado final o una etapa intermedia sin recalcular los filtros.
     template <class Imagen>
     static const Imagen& etapa(Efecto<Imagen>& efecto, const Imagen& final, int vista) {
         switch (vista) {
@@ -119,6 +122,7 @@ private:
         }
     }
 
+    // Compone la vista seleccionada sin deformar la comparación.
     static void prepararVista(const Mat& rgba, const Mat& imagen, Mat& salida, int vista) {
         if (vista == 2) {
             rgba.copyTo(salida);
@@ -126,6 +130,11 @@ private:
         }
         if (vista != 0 || rgba.cols < 2 || rgba.rows < 2) {
             cvtColor(imagen, salida, imagen.channels() == 1 ? COLOR_GRAY2RGBA : COLOR_BGR2RGBA);
+            if (vista == vistaPortal) {
+                aplicarPortal(rgba, salida);
+                Mat interior = salida(regionPortal(salida.size()));
+                rectangle(interior, Rect(0, 0, interior.cols, interior.rows), Scalar(25, 25, 25, 255), 2);
+            }
             return;
         }
         Mat efecto;
@@ -143,6 +152,7 @@ private:
         }
     }
 
+    // Encaja la imagen completa sin deformarla, como las composiciones de clase.
     static void encajar(const Mat& imagen, Mat& lienzo, const Rect& panel) {
         double escala = min(double(panel.width) / imagen.cols, double(panel.height) / imagen.rows);
         Size tamano(max(1, cvRound(imagen.cols * escala)), max(1, cvRound(imagen.rows * escala)));
@@ -150,7 +160,6 @@ private:
         resize(imagen, reducida, tamano, 0, 0, INTER_AREA);
         Rect posicion(panel.x + (panel.width - tamano.width) / 2,
                       panel.y + (panel.height - tamano.height) / 2, tamano.width, tamano.height);
-        // Fit the complete image, as in the class copyTo/ROI compositions.
         reducida.copyTo(lienzo(posicion));
     }
 

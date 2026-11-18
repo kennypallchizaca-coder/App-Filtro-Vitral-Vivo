@@ -18,7 +18,6 @@ import android.widget.AdapterView
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -26,12 +25,9 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowCompat
 import com.example.interciclovision.databinding.ActivityMainBinding
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.opencv.android.CameraBridgeViewBase
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
-import java.io.IOException
-import java.time.Instant
 import java.util.Locale
 
 class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListener2 {
@@ -40,16 +36,11 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
     @Volatile private var usarGpu = false
     @Volatile private var vista = 0
     @Volatile private var reanudada = false
-    @Volatile private var camaraActiva = false
     @Volatile private var falloFrame = false
     @Volatile private var ultimoFrame = 0L
     private var indiceCamara = CameraBridgeViewBase.CAMERA_ID_FRONT
     private var salida: Mat? = null
     private val sliders = mutableListOf<SeekBar>()
-    private val registro = RegistroMediciones()
-    private var csvGuardado = ""
-    private var csvParaGuardar = ""
-    private var guardandoCsv = false
     private var recursos = RecursosMedidos()
     private var marcaRecursos = 0L
     private var marcaCpu = 0L
@@ -63,9 +54,6 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
             binding.emptyPreview.setText(R.string.camera_permission_message)
             actualizarControles()
         }
-    }
-    private val guardarCsv = registerForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
-        if (uri != null) escribirCsv(uri)
     }
     private val vigilancia = object : Runnable {
         override fun run() {
@@ -89,12 +77,11 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
             if (runCatching { ParametrosMoviles.validar(it) }.isSuccess) valores = it.copyOf()
         }
         usarGpu = savedInstanceState?.getBoolean("gpu") ?: false
-        vista = (savedInstanceState?.getInt("vista") ?: 0).coerceIn(0, 8)
+        vista = (savedInstanceState?.getInt("vista") ?: 0)
+            .coerceIn(0, resources.getStringArray(R.array.views).lastIndex)
         indiceCamara = savedInstanceState?.getInt("camara") ?: if (
             packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT)
         ) CameraBridgeViewBase.CAMERA_ID_FRONT else CameraBridgeViewBase.CAMERA_ID_BACK
-        csvGuardado = savedInstanceState?.getString("csv") ?: ""
-        csvParaGuardar = savedInstanceState?.getString("csvPendiente") ?: ""
 
         val margen = (12 * resources.displayMetrics.density).toInt()
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
@@ -144,7 +131,7 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
                 override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
                 override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
                 override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                    // Publish a new array; the camera never reads a half-updated preset.
+                    // Publicar un arreglo nuevo evita que la cámara lea parámetros a medio actualizar.
                     val nuevos = valores.copyOf()
                     nuevos[i] = control.desdeProgreso(progress)
                     valores = nuevos
@@ -184,55 +171,6 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
                 slider.progress = (valores[i] - control.minimo) / control.paso
             }
         }
-        binding.measureButton.setOnClickListener {
-            if (synchronized(registro) { registro.activa }) {
-                synchronized(registro) { registro.detener() }
-                actualizarControles()
-            } else if (textoCsv().isNotEmpty()) {
-                MaterialAlertDialogBuilder(this).setTitle(R.string.new_measurement)
-                    .setMessage(R.string.replace_measurement)
-                    .setNegativeButton(android.R.string.cancel, null)
-                    .setPositiveButton(R.string.replace) { _, _ -> iniciarMedicion() }.show()
-            } else iniciarMedicion()
-        }
-        binding.exportButton.setOnClickListener {
-            csvParaGuardar = textoCsv()
-            if (csvParaGuardar.isNotEmpty())
-                guardarCsv.launch("vision-mediciones-${System.currentTimeMillis()}.csv")
-        }
-    }
-
-    private fun iniciarMedicion() {
-        synchronized(registro) { registro.iniciar(valores, vista) }
-        csvGuardado = ""
-        actualizarControles()
-    }
-
-    private fun escribirCsv(uri: Uri) {
-        val datos = csvParaGuardar
-        if (datos.isEmpty()) return
-        val resolver = applicationContext.contentResolver
-        guardandoCsv = true
-        actualizarControles()
-        // A document provider may be slow; never block camera controls on its I/O.
-        Thread({
-            val error = try {
-                val stream = resolver.openOutputStream(uri) ?: throw IOException("No se abrio el archivo")
-                stream.bufferedWriter(Charsets.UTF_8).use { it.write(datos) }
-                null
-            } catch (e: Exception) {
-                e.message ?: e.javaClass.simpleName
-            }
-            handler.post {
-                guardandoCsv = false
-                if (!isDestroyed) {
-                    val mensaje = if (error == null) getString(R.string.csv_saved)
-                        else getString(R.string.csv_error, error)
-                    Toast.makeText(this, mensaje, Toast.LENGTH_LONG).show()
-                    actualizarControles()
-                }
-            }
-        }, "guardar-csv").start()
     }
 
     private fun tienePermiso() = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
@@ -277,7 +215,6 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         ultimaUi = 0L
         fotogramas = 0
         recursos = RecursosMedidos()
-        camaraActiva = true
         runOnUiThread {
             binding.emptyPreview.visibility = View.GONE
             actualizarControles()
@@ -285,11 +222,9 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
     }
 
     override fun onCameraViewStopped() {
-        camaraActiva = false
         salida?.release()
         salida = null
         reiniciarProcesador()
-        synchronized(registro) { registro.detener() }
         runOnUiThread { if (!isDestroyed) actualizarControles() }
     }
 
@@ -299,40 +234,29 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         val destino = salida ?: return rgba
         if (!reanudada || falloFrame) return rgba
         try {
-            val comparar: Boolean
-            val idMedicion: Long
-            val parametros: IntArray
-            val vistaActual: Int
-            synchronized(registro) {
-                comparar = registro.activa
-                idMedicion = registro.generacion
-                parametros = if (comparar) registro.valores() else valores
-                vistaActual = if (comparar) registro.vista else vista
-            }
-            val t = procesarFrame(rgba.nativeObjAddr, destino.nativeObjAddr,
-                parametros, usarGpu, vistaActual, comparar)
+            val parametros = valores
+            val vistaActual = vista
+            // Ambas rutas miden el mismo fotograma; el modo elegido decide qué imagen mostrar.
+            val tiempos = procesarFrame(rgba.nativeObjAddr, destino.nativeObjAddr,
+                parametros, usarGpu, vistaActual, true)
             actualizarRecursos()
             val dispositivo = informacionGpu()
-            var termino = false
-            synchronized(registro) {
-                if (comparar && registro.activa) {
-                    registro.agregar(idMedicion, t, rgba.cols(), rgba.rows(), recursos, dispositivo, Instant.now().toString())
-                    termino = !registro.activa
-                }
-            }
             val ahora = SystemClock.elapsedRealtime()
-            if (ahora - ultimaUi >= 500 || termino) {
+            if (ahora - ultimaUi >= 500) {
                 ultimaUi = ahora
                 val r = recursos
                 val comparacionVertical = rgba.rows() > rgba.cols()
                 runOnUiThread {
                     if (!isDestroyed && reanudada) {
+                        val tiempoCpuMs = tiempos[0]
+                        val tiempoGpuMs = tiempos[1]
+                        val gpuUsada = tiempos[5] == 1.0
                         if (vistaActual == 0 && vista == 0) binding.viewCaption.setText(
                             if (comparacionVertical) R.string.comparison_vertical else R.string.comparison_horizontal)
-                        binding.metrics.text = getString(R.string.live_metrics, numero(t[0]), numero(t[1]),
+                        binding.metrics.text = getString(R.string.live_metrics, numero(tiempoCpuMs), numero(tiempoGpuMs),
                             numero(r.fps), numero(r.ramPssMiB), numero(r.cpuPorcentaje), numero(r.ramLibreMiB))
                         binding.status.text = getString(R.string.live_backend,
-                            if (t[5] == 1.0) "UMat / OpenCL" else "CPU / Mat", dispositivo.take(220))
+                            if (gpuUsada) "UMat / OpenCL" else "CPU / Mat", dispositivo.take(220))
                         actualizarControles()
                     }
                 }
@@ -368,37 +292,16 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         marcaCpu = cpu
     }
 
-    private fun textoCsv() = synchronized(registro) { registro.csv().ifEmpty { csvGuardado } }
     private fun numero(valor: Double) = if (valor.isFinite()) String.format(Locale.US, "%.2f", valor) else "—"
 
     private fun actualizarControles() {
-        val midiendo = synchronized(registro) {
-            if (registro.activa) binding.measurementStatus.text =
-                getString(R.string.measurement_progress, registro.pares)
-            else if (registro.pares > 0) binding.measurementStatus.text =
-                if (registro.promedioGpuMs.isFinite()) resources.getQuantityString(R.plurals.measurement_summary,
-                    registro.pares, registro.pares, numero(registro.promedioCpuMs), numero(registro.promedioGpuMs))
-                else resources.getQuantityString(R.plurals.measurement_cpu_only,
-                    registro.pares, registro.pares, numero(registro.promedioCpuMs))
-            registro.activa
-        }
-        binding.measureButton.isEnabled = camaraActiva
-        binding.measureButton.setText(if (midiendo) R.string.stop_measurement else R.string.start_measurement)
-        binding.exportButton.isEnabled = !midiendo && !guardandoCsv && textoCsv().isNotEmpty()
-        binding.exportButton.setText(if (guardandoCsv) R.string.csv_saving else R.string.export_csv)
-        binding.permissionButton.isEnabled = !midiendo
         binding.permissionButton.setText(if (tienePermiso()) R.string.restart_camera else if (
             getPreferences(MODE_PRIVATE).getBoolean("permisoSolicitado", false) &&
             !shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)
         ) R.string.open_camera_settings else R.string.allow_camera)
-        binding.cameraButton.isEnabled = !midiendo &&
+        binding.cameraButton.isEnabled =
             packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT) &&
             packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA)
-        binding.resetButton.isEnabled = !midiendo
-        binding.cpuButton.isEnabled = !midiendo
-        binding.gpuButton.isEnabled = !midiendo
-        binding.viewSelector.isEnabled = !midiendo
-        sliders.forEach { it.isEnabled = !midiendo }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -406,8 +309,6 @@ class MainActivity : AppCompatActivity(), CameraBridgeViewBase.CvCameraViewListe
         outState.putBoolean("gpu", usarGpu)
         outState.putInt("vista", vista)
         outState.putInt("camara", indiceCamara)
-        outState.putString("csv", textoCsv())
-        outState.putString("csvPendiente", csvParaGuardar)
         super.onSaveInstanceState(outState)
     }
 

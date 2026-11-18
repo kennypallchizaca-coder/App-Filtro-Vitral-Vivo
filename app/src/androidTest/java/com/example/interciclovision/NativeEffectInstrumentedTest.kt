@@ -19,7 +19,7 @@ class NativeEffectInstrumentedTest {
                 val original = rgba.clone()
                 val output = Mat()
                 try {
-                    for (view in 0..8) {
+                    for (view in activity.resources.getStringArray(R.array.views).indices) {
                         val times = activity.procesarFrame(rgba.nativeObjAddr, output.nativeObjAddr,
                             ParametrosMoviles.iniciales(), false, view, false)
                         assertTrue(times[0] > 0)

@@ -73,6 +73,9 @@ int main() {
     catch (const invalid_argument&) { rechazo = true; }
     assert(rechazo);
 
+    auto cpuEnVivo = procesador.procesar(rgba, salida, valores, false, 1, true);
+    assert(cpuEnVivo.cpuMs > 0 && !cpuEnVivo.gpuUsada);
+    assert(norm(salida, esperado, NORM_INF) == 0);
     auto t = procesador.procesar(rgba, salida, valores, true, 1, true);
     assert(t.cpuMs > 0 && salida.size() == rgba.size());
     if (t.gpuUsada) {
@@ -84,5 +87,24 @@ int main() {
         assert(norm(salida, esperado, NORM_INF) == 0);
         cout << "GPU unavailable: truthful CPU fallback checked\n";
     }
-    cout << "Native Android adapter tests passed\n";
+    for (const Mat& entrada : {rgba, vertical}) {
+        Mat completa, portal, base = entrada.clone();
+        procesador.procesar(entrada, completa, valores, false, 1, false);
+        procesador.procesar(entrada, portal, valores, false, 9, false);
+        Rect esquina(0, 0, 4, 4), centro(entrada.cols / 2 - 2, entrada.rows / 2 - 2, 4, 4);
+        assert(portal.size() == entrada.size() && portal.type() == entrada.type());
+        assert(norm(portal(esquina), entrada(esquina), NORM_INF) == 0);
+        assert(norm(portal(centro), completa(centro), NORM_INF) == 0);
+        assert(portal.at<Vec4b>(regionPortal(entrada.size()).tl()) == Vec4b(25, 25, 25, 255));
+        assert(norm(entrada, base, NORM_INF) == 0);
+    }
+    auto gpuPortal = procesador.procesar(rgba, salida, valores, true, 9, true);
+    assert(gpuPortal.cpuMs > 0 && gpuPortal.gpuUsada == t.gpuUsada);
+    assert(norm(salida(Rect(0, 0, 4, 4)), rgba(Rect(0, 0, 4, 4)), NORM_INF) == 0);
+    antes = salida.clone();
+    rechazo = false;
+    try { procesador.procesar(rgba, salida, valores, false, 10, false); }
+    catch (const invalid_argument&) { rechazo = true; }
+    assert(rechazo && norm(salida, antes, NORM_INF) == 0);
+    cout << "Portal movil: interior comic y exterior real en ambas orientaciones\n";
 }

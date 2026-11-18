@@ -1,4 +1,4 @@
-"""Static mobile checks; these do not replace running the camera on a phone."""
+"""Comprobaciones estáticas; no sustituyen probar la cámara en el teléfono."""
 import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -14,6 +14,29 @@ def luminance(color):
 
 
 class AndroidAppTest(unittest.TestCase):
+    def test_academic_build_excludes_arcore_prototype(self):
+        settings = (ROOT / "settings.gradle.kts").read_text(encoding="utf-8")
+        self.assertIn('include(":app")', settings)
+        self.assertNotIn(":portalra", settings)
+
+    def test_live_metrics_do_not_offer_file_export(self):
+        activity = (ROOT / "app/src/main/java/com/example/interciclovision/MainActivity.kt").read_text(encoding="utf-8")
+        layout = (ROOT / "app/src/main/res/layout/activity_main.xml").read_text(encoding="utf-8")
+        self.assertNotIn("CreateDocument", activity)
+        self.assertNotIn("RegistroMediciones", activity)
+        self.assertNotIn("export_button", layout)
+        self.assertNotIn("measure_button", layout)
+        self.assertIn("R.string.live_metrics", activity)
+        self.assertIn("actualizarRecursos()", activity)
+        self.assertIn("parametros, usarGpu, vistaActual, true)", activity)
+
+    def test_portal_does_not_require_transformation_slider(self):
+        layout = ET.parse(ROOT / "app/src/main/res/layout/activity_main.xml")
+        control = layout.find(".//SeekBar[@" + A + "id='@+id/transformation']")
+        self.assertIsNone(control)
+        activity = (ROOT / "app/src/main/java/com/example/interciclovision/MainActivity.kt").read_text(encoding="utf-8")
+        self.assertNotIn("binding.transformation", activity)
+
     def test_camera_is_explicit_and_no_storage_or_network_permission(self):
         manifest = ET.parse(ROOT / "app/src/main/AndroidManifest.xml")
         permissions = {entry.get(A + "name") for entry in manifest.findall("uses-permission")}
@@ -24,10 +47,15 @@ class AndroidAppTest(unittest.TestCase):
     def test_named_views_and_touch_targets(self):
         strings = ET.parse(ROOT / "app/src/main/res/values/strings.xml")
         views = strings.find("./string-array[@name='views']")
-        self.assertEqual(len(views), 9)
+        self.assertEqual(len(views), 10)
+        self.assertEqual(views[1].text, "Spiderman")
+        self.assertEqual(views[7].text, "Respuesta del kernel propio")
+        self.assertEqual(views[9].text, "Portal cómic")
         layout = ET.parse(ROOT / "app/src/main/res/layout/activity_main.xml")
         buttons = [node for node in layout.iter() if node.tag.endswith("Button")]
-        self.assertGreaterEqual(len(buttons), 6)
+        ids = {button.get(A + "id") for button in buttons}
+        self.assertTrue({"@+id/permission_button", "@+id/cpu_button", "@+id/gpu_button",
+                         "@+id/camera_button", "@+id/reset_button"}.issubset(ids))
         for button in buttons:
             self.assertGreaterEqual(float(button.get(A + "minHeight", "0dp")[:-2]), 48)
             self.assertTrue(button.get(A + "text"))
